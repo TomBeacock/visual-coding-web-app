@@ -120,10 +120,6 @@ export function setWeightInLayout(layout: DockLayoutData, id: string, weight: nu
     node.weight = weight;
 }
 
-export function addNodeInLayout(layout: DockLayoutData, node: DockNodeData, region: Region) {
-
-}
-
 export function removeNodeInLayout(layout: DockLayoutData, id: string) {
     const parentNode = findParentInLayout(layout, id);
     if (parentNode === null) {
@@ -156,10 +152,6 @@ function replaceNodeInLayout(layout: DockLayoutData, oldNode: DockNodeData, newN
         newNode.weight = oldNode.weight;
         parentNode.children.splice(index, 1, newNode);
     }
-}
-
-export function addNodeToBoxInLayout(layout: DockLayoutData, id: string, index: number, node: DockNodeData) {
-
 }
 
 export function addTabInLayout(layout: DockLayoutData, panelId: string, tab: DockTabData, index?: number) {

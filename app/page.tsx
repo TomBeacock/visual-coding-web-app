@@ -1,4 +1,4 @@
-import Icon from "./components/icon";
+import { Icon } from "./components/material-icon";
 import { DockLayout } from "./components/dock-layout"
 import { DockLayoutData } from "./components/dock-data";
 import "./visual-coding.scss";

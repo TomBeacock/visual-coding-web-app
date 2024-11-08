@@ -51,8 +51,8 @@ export const DockPanel = forwardRef(function DockPanel({ data: { id, weight, sel
         dragData.dstNodeId = undefined;
     }
 
-    let tabElements: React.ReactNode[] = [];
-    let tabContentElements: React.ReactNode[] = [];
+    const tabElements: React.ReactNode[] = [];
+    const tabContentElements: React.ReactNode[] = [];
     for (let i = 0; i < children.length; i++) {
         const selected = children[i].id === selectedTabId;
         tabElements.push(

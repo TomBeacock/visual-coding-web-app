@@ -1,8 +1,8 @@
 'use client'
 
-import { Dispatch, ForwardedRef, forwardRef, RefObject, SetStateAction, useContext, useImperativeHandle, useRef, useState } from "react";
+import { ForwardedRef, forwardRef, RefObject, useContext, useImperativeHandle, useRef } from "react";
 import { createDockNode, DockLayoutContext } from "./dock-layout";
-import { DockBoxData, DockLayoutData, DockNodeData, Direction } from "./dock-data";
+import { DockBoxData, Direction } from "./dock-data";
 import { clamp01 } from "../clamp";
 import { findNodeInLayout, setWeightInLayout } from "./dock-algorithm";
 
@@ -56,7 +56,7 @@ function Divider({ direction, parentRef, index, prevNodeId, nextNodeId }: Divide
         dockLayoutContext.setLayout(newLayout);
     }
 
-    function onPointerUp(event: PointerEvent) {
+    function onPointerUp() {
         document.documentElement.style.cursor = "";
         window.removeEventListener("pointermove", onPointerMove);
         window.removeEventListener("pointerup", onPointerUp);
@@ -89,7 +89,7 @@ export const DockBox = forwardRef(function DockBox({ data: { direction, weight, 
     useImperativeHandle(ref, () => selfRef.current!);
 
     // Create child nodes
-    let childElements: React.ReactNode[] = []
+    const childElements: React.ReactNode[] = []
     for (let i = 0; i < children.length; i++) {
         // Create dividing element
         if (i > 0) {

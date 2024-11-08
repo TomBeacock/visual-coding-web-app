@@ -4,7 +4,7 @@ import { createContext, Dispatch, ForwardedRef, MutableRefObject, SetStateAction
 import { DockBox } from "./dock-box";
 import { DockPanel } from "./dock-panel";
 import { DockDragData, DockLayoutData, DockNodeData } from "./dock-data";
-import { calculateRegionPercent, calculateRegionAbsolute, validateLayout, calculateRegionRect, moveTabInLayout } from "./dock-algorithm";
+import { calculateRegionAbsolute, validateLayout, calculateRegionRect, moveTabInLayout } from "./dock-algorithm";
 
 type DockIndicatorProps = {
     visible: boolean,
