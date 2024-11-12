@@ -1,16 +1,11 @@
+import "./globals.css";
 import type { Metadata } from "next";
-import localFont from "next/font/local";
-import "./globals.scss";
+import { Roboto_Flex } from "next/font/google";
+import { ThemeProvider } from "./components/theme-provider/theme-provider";
+import { ThemeScript } from "./components/theme-provider/theme-script";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+const roboto = Roboto_Flex({
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -20,9 +15,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased scroll-none`}>
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <ThemeScript/>
+      </head>
+      <body className={roboto.className}>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,10 +1,11 @@
-'use client'
+"use client"
 
-import { ForwardedRef, forwardRef, RefObject, useContext, useImperativeHandle, useRef } from "react";
+import { RefObject, useContext, useRef } from "react";
 import { createDockNode, DockLayoutContext } from "./dock-layout";
 import { DockBoxData, Direction } from "./dock-data";
-import { clamp01 } from "../clamp";
-import { findNodeInLayout, setWeightInLayout } from "./dock-algorithm";
+import { clamp01 } from "../../lib/clamp";
+import { findNodeInLayout, setWeightInLayout } from "../../lib/dock-algorithm";
+import classes from "./dock-layout.module.css";
 
 type DividerProps = {
     direction: Direction,
@@ -71,22 +72,18 @@ function Divider({ direction, parentRef, index, prevNodeId, nextNodeId }: Divide
         };
     }
 
-    const className = direction === "row" ?
-        "horizontal cursor-ew-resize" :
-        "vertical cursor-ns-resize";
-
     return (
         <div
-            className={`dock-divider flex-none basis-1.5 ${className}`}
+            className={classes.divider}
+            data-direction={direction}
             onPointerDown={onPointerDown}
         >
         </div>
     );
 }
 
-export const DockBox = forwardRef(function DockBox({ data: { direction, weight, children } }: { data: DockBoxData }, ref: ForwardedRef<HTMLDivElement>) {
-    const selfRef = useRef<HTMLDivElement>(null);
-    useImperativeHandle(ref, () => selfRef.current!);
+export function DockBox({ data: { direction, weight, children } }: { data: DockBoxData }) {
+    const ref = useRef<HTMLDivElement>(null);
 
     // Create child nodes
     const childElements: React.ReactNode[] = []
@@ -97,7 +94,7 @@ export const DockBox = forwardRef(function DockBox({ data: { direction, weight, 
                 <Divider
                     key={i}
                     direction={direction}
-                    parentRef={selfRef}
+                    parentRef={ref}
                     index={(i - 1) * 2 + 1}
                     prevNodeId={children[i - 1].id!}
                     nextNodeId={children[i].id!}
@@ -109,11 +106,12 @@ export const DockBox = forwardRef(function DockBox({ data: { direction, weight, 
 
     return (
         <div
-            ref={selfRef}
-            className={`flex basis-0 ${direction === "row" ? "flex-row" : "flex-col"}`}
+            ref={ref}
+            className={classes.box}
+            data-direction={direction}
             style={{ flexGrow: weight }}
         >
             {childElements}
         </div>
     );
-});
+};

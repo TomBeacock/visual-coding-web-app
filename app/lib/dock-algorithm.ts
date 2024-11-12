@@ -1,4 +1,4 @@
-import { DockBoxData, DockLayoutData, DockNodeData, DockPanelData, DockTabData, Direction, Region } from "./dock-data";
+import { DockBoxData, DockLayoutData, DockNodeData, DockPanelData, DockTabData, Direction, Region } from "../components/dock-layout/dock-data";
 
 let nodeIdCounter: number = 0;
 
@@ -40,7 +40,7 @@ export function validateLayout(layout: DockLayoutData) {
         }
 
         // Validate active tab id
-        if(panel.selectedTabId === undefined) {
+        if (panel.selectedTabId === undefined) {
             panel.selectedTabId = panel.children[0].id;
         }
     }
@@ -161,7 +161,7 @@ export function addTabInLayout(layout: DockLayoutData, panelId: string, tab: Doc
         return;
     }
     node.selectedTabId = tab.id;
-    if(index === undefined) {
+    if (index === undefined) {
         node.children.push(tab);
     }
     else {
@@ -183,7 +183,7 @@ export function removeTabInLayout(layout: DockLayoutData, panelId: string, index
         removeNodeInLayout(layout, panelId);
     }
     // Select new tab from remaining
-    else if(wasSelected) {
+    else if (wasSelected) {
         const selectedIndex = index === 0 ? 0 : index - 1;
         node.selectedTabId = node.children[selectedIndex].id;
     }
@@ -206,7 +206,7 @@ export function moveTabInLayout(
     }
 
     // Optimization for when no move is required
-    if (srcId === dstId && srcNode.children.length === 1) {
+    if (srcId === dstId && (srcNode.children.length === 1 || target === "center")) {
         return;
     }
 
@@ -226,7 +226,7 @@ export function moveTabInLayout(
 
         if (dstId === "dock-root") {
             const rootNode = layout.root;
-            if(rootNode.type === "box") {
+            if (rootNode.type === "box") {
                 // Add node to existing box
                 if (rootNode.direction === direction) {
                     const newPanel: DockPanelData = {

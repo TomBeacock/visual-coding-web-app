@@ -1,0 +1,82 @@
+:root {
+    --gray-50:  #f5f5f6;
+    --gray-100: #e5e6e8;
+    --gray-200: #cecfd3;
+    --gray-300: #acadb4;
+    --gray-400: #82848e;
+    --gray-500: #676873;
+    --gray-600: #585962;
+    --gray-700: #2f2f35;
+    --gray-800: #252529;
+    --gray-900: #161618;
+    --gray-950: #0a0a0b;
+
+    --blue-50:  #f0f8fe;
+    --blue-100: #deedfb;
+    --blue-200: #c4e2f9;
+    --blue-300: #9bd0f5;
+    --blue-400: #6bb5ef;
+    --blue-500: #4596e8;
+    --blue-600: #337cdd;
+    --blue-700: #2b67ca;
+    --blue-800: #2954a4;
+    --blue-900: #264982;
+    --blue-950: #1b2d50;
+}
+
+html, :host {
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+    -moz-tab-size: 4;
+    tab-size: 4;
+    font-feature-settings: normal;
+    font-variation-settings: normal;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    line-height: inherit;
+}
+
+*, ::before, ::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: #e5e7eb;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+blockquote, dl, dd, h1, h2, h3, h4, h5, h6, hr, figure, p, pre {
+    margin: 0;
+}
+
+button, input, optgroup, select, textarea {
+    font-family: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    font-size: 100%;
+    font-weight: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    margin: 0;
+    padding: 0;
+}
+
+button, select {
+    text-transform: none;
+}
+
+button, input:where([type='button']), input:where([type='reset']), input:where([type='submit']) {
+    background-color: transparent;
+    background-image: none;
+}
+
+button, [role="button"] {
+    cursor: pointer;
+}

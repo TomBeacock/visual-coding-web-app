@@ -1,0 +1,47 @@
+.button {
+    display: flex;
+    align-items: center;
+    column-gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+
+    &:hover {
+        background-color: var(--gray-200);
+
+        [data-theme=dark] & {
+            background-color: var(--gray-700);
+        }
+    }
+
+    &[data-icon-only=true] {
+        padding: 0.25rem;
+    }
+}
+
+.group {
+    display: flex;
+    align-items: center;
+    
+    &>.button{
+        border-width: 1px 0px 1px 1px;
+        border-style: solid;
+        border-radius: 0;
+
+        border-color: var(--gray-300);
+
+        [data-theme=dark] & {
+            border-color: var(--gray-600);
+        }
+
+        &:first-child {
+            border-top-left-radius: 0.25rem;
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        &:last-child {
+            border-top-right-radius: 0.25rem;
+            border-bottom-right-radius: 0.25rem;
+            border-right-width: 1px;
+        }
+    }
+}

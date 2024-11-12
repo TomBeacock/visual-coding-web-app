@@ -17,8 +17,9 @@ export type DockPanelData = {
 
 export type DockTabData = {
     id?: string,
-    tabInner: React.ReactNode,
-    tabContent: React.ReactNode,
+    icon?: React.ReactNode,
+    label: string,
+    content: React.ReactNode,
 };
 
 export type DockNodeData = DockBoxData | DockPanelData;
