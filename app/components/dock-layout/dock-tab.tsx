@@ -1,8 +1,9 @@
-import { useContext } from "react";
-import { DockLayoutContext } from "./dock-layout";
-import { DockLayoutData, DockTabData } from "./dock-data";
-import { findNodeInLayout } from "@/app/lib/dock-algorithm";
+"use client"
+
 import classes from "./dock-layout.module.css"
+import { useDock } from "./dock-provider";
+import { DockLayoutData, DockTabData } from "./dock-data";
+import { findNodeInLayout } from "./dock-algorithm";
 
 type DockTabProps = {
     data: DockTabData,
@@ -12,26 +13,26 @@ type DockTabProps = {
 }
 
 export function DockTab({ data, index, parentId, selected }: DockTabProps) {
-    const context = useContext(DockLayoutContext);
+    const dock = useDock();
 
     function onClick() {
         if (selected) {
             return;
         }
-        const newLayout = { ...context.layout } as DockLayoutData;
+        const newLayout = { ...dock.layout } as DockLayoutData;
         const parentNode = findNodeInLayout(newLayout, parentId);
         if (parentNode === null || parentNode.type !== "panel") {
             return;
         }
         parentNode.selectedTabId = data.id;
-        context.setLayout(newLayout);
+        dock.setLayout(newLayout);
     }
 
     function onDragStart(event: React.DragEvent) {
         event.stopPropagation();
         event.dataTransfer.effectAllowed = "move";
 
-        const { current: dragData } = context.dragData;
+        const { current: dragData } = dock.dragData;
         dragData.srcNodeId = parentId;
         dragData.srcTabIndex = index;
     }

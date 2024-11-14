@@ -1,11 +1,12 @@
 "use client"
 
-import { RefObject, useContext, useRef } from "react";
-import { createDockNode, DockLayoutContext } from "./dock-layout";
+import classes from "./dock-layout.module.css";
+import { RefObject, useRef } from "react";
+import { createDockNode } from "./dock-layout";
 import { DockBoxData, Direction } from "./dock-data";
 import { clamp01 } from "../../lib/clamp";
-import { findNodeInLayout, setWeightInLayout } from "../../lib/dock-algorithm";
-import classes from "./dock-layout.module.css";
+import { findNodeInLayout, setWeightInLayout } from "./dock-algorithm";
+import { useDock } from "./dock-provider";
 
 type DividerProps = {
     direction: Direction,
@@ -16,7 +17,7 @@ type DividerProps = {
 }
 
 function Divider({ direction, parentRef, index, prevNodeId, nextNodeId }: DividerProps) {
-    const dockLayoutContext = useContext(DockLayoutContext);
+    const dock = useDock();
 
     function onPointerDown(event: React.PointerEvent) {
         event.preventDefault();
@@ -26,7 +27,7 @@ function Divider({ direction, parentRef, index, prevNodeId, nextNodeId }: Divide
     }
 
     function onPointerMove(event: PointerEvent) {
-        if (dockLayoutContext.layout === null || parentRef.current === null) {
+        if (dock.layout === null || parentRef.current === null) {
             return;
         }
 
@@ -42,19 +43,19 @@ function Divider({ direction, parentRef, index, prevNodeId, nextNodeId }: Divide
             nextElement.getBoundingClientRect().right :
             nextElement.getBoundingClientRect().bottom;
 
-        const prevNodeData = findNodeInLayout(dockLayoutContext.layout, prevNodeId);
-        const nextNodeData = findNodeInLayout(dockLayoutContext.layout, nextNodeId);
+        const prevNodeData = findNodeInLayout(dock.layout, prevNodeId);
+        const nextNodeData = findNodeInLayout(dock.layout, nextNodeId);
         const totalWeight =
             (prevNodeData?.weight !== undefined ? prevNodeData.weight : 1) +
             (nextNodeData?.weight !== undefined ? nextNodeData.weight : 1);
 
         const weights = calculateWeights(pos, minBound, maxBound, totalWeight);
 
-        const newLayout = { ...dockLayoutContext.layout };
+        const newLayout = { ...dock.layout };
         setWeightInLayout(newLayout, prevNodeId, weights.prev);
         setWeightInLayout(newLayout, nextNodeId, weights.next);
 
-        dockLayoutContext.setLayout(newLayout);
+        dock.setLayout(newLayout);
     }
 
     function onPointerUp() {

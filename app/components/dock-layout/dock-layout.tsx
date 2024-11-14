@@ -1,32 +1,13 @@
 "use client"
 
-import { createContext, Dispatch, MutableRefObject, SetStateAction, useRef, useState } from "react";
+import classes from "./dock-layout.module.css";
+import { useRef, useState } from "react";
 import { DockBox } from "./dock-box";
 import { DockPanel } from "./dock-panel";
 import { DockDragData, DockLayoutData, DockNodeData } from "./dock-data";
-import { calculateRegionAbsolute, validateLayout, calculateRegionRect, moveTabInLayout } from "../../lib/dock-algorithm";
-import classes from "./dock-layout.module.css";
-
-type DockIndicatorProps = {
-    visible: boolean,
-    rect: {
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-    }
-}
-
-function DockIndicator({ visible, rect }: DockIndicatorProps) {
-    return (
-        <div
-            className={classes.indicator}
-            data-visible={visible}
-            style={{ left: rect.x, top: rect.y, width: rect.width, height: rect.height }}
-        >
-        </div>
-    );
-}
+import { calculateRegionAbsolute, validateLayout, calculateRegionRect, moveTabInLayout } from "./dock-algorithm";
+import { DockIndicator, DockIndicatorProps } from "./dock-indicator";
+import { DockProvider } from "./dock-provider";
 
 export function createDockNode(nodeData: DockNodeData): React.ReactNode {
     if (nodeData.type === "panel") {
@@ -36,29 +17,6 @@ export function createDockNode(nodeData: DockNodeData): React.ReactNode {
         return <DockBox key={nodeData.id} data={nodeData}></DockBox>;
     }
 }
-
-export type DockLayoutContextType = {
-    layout: DockLayoutData,
-    setLayout: Dispatch<SetStateAction<DockLayoutData>>,
-    indicatorProps: DockIndicatorProps,
-    setIndicatorProps: Dispatch<SetStateAction<DockIndicatorProps>>,
-    dragData: MutableRefObject<DockDragData>,
-}
-
-export const DockLayoutContext = createContext<DockLayoutContextType>({
-    layout: { root: null },
-    setLayout: () => { },
-    indicatorProps: { visible: false, rect: { x: 0, y: 0, width: 0, height: 0 } },
-    setIndicatorProps: () => { },
-    dragData: {
-        current: {
-            srcNodeId: undefined,
-            srcTabIndex: -1,
-            dstNodeId: undefined,
-            target: "center",
-        } as DockDragData
-    },
-});
 
 type DockLayoutProps = {
     layout: DockLayoutData,
@@ -163,7 +121,7 @@ export function DockLayout({ layout: initialLayout }: DockLayoutProps) {
     }
 
     return (
-        <DockLayoutContext.Provider
+        <DockProvider
             value={{
                 layout, setLayout,
                 indicatorProps, setIndicatorProps,
@@ -181,6 +139,6 @@ export function DockLayout({ layout: initialLayout }: DockLayoutProps) {
                 {layout.root !== null && createDockNode(layout.root)}
                 <DockIndicator visible={indicatorProps.visible} rect={indicatorProps.rect} />
             </div>
-        </DockLayoutContext.Provider>
+        </DockProvider>
     );
 }

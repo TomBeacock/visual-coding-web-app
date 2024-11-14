@@ -1,15 +1,15 @@
 "use client"
 
-import { PropsWithChildren, useContext, useRef } from "react";
+import classes from "./dock-layout.module.css";
+import { PropsWithChildren, useRef } from "react";
 import { DockPanelData } from "./dock-data";
-import { DockLayoutContext } from "./dock-layout";
-import { calculateRegionPercent, calculateRegionRect } from "../../lib/dock-algorithm";
+import { calculateRegionPercent, calculateRegionRect } from "./dock-algorithm";
 import { DockTab } from "./dock-tab";
-import classes from "./dock-layout.module.css"
+import { useDock } from "./dock-provider";
 
 export function DockPanel({ data: { id, weight, selectedTabId, children } }: { data: DockPanelData }) {
     const ref = useRef<HTMLDivElement>(null);
-    const context = useContext(DockLayoutContext);
+    const dock = useDock();
 
     function onDragEnter(event: React.DragEvent) {
         event.preventDefault();
@@ -23,7 +23,7 @@ export function DockPanel({ data: { id, weight, selectedTabId, children } }: { d
             return;
         }
 
-        const { current: dragData } = context.dragData;
+        const { current: dragData } = dock.dragData;
         if (dragData.dstNodeId !== undefined && (dragData.dstNodeId !== id || typeof dragData.target === "number")) {
             return;
         }
@@ -41,13 +41,13 @@ export function DockPanel({ data: { id, weight, selectedTabId, children } }: { d
             visible: true,
             rect: calculateRegionRect(rect, region),
         };
-        context.setIndicatorProps(newIndicatorProps);
+        dock.setIndicatorProps(newIndicatorProps);
     }
 
     function onDragLeave(event: React.DragEvent) {
         event.preventDefault();
 
-        const { current: dragData } = context.dragData;
+        const { current: dragData } = dock.dragData;
         dragData.dstNodeId = undefined;
     }
 
@@ -84,7 +84,7 @@ export function DockPanel({ data: { id, weight, selectedTabId, children } }: { d
 };
 
 export function DockNav({ parentId, children }: PropsWithChildren<{ parentId?: string }>) {
-    const context = useContext(DockLayoutContext);
+    const dock = useDock();
     const ref = useRef<HTMLDivElement>(null)
 
     function onDragEnter(event: React.DragEvent) {
@@ -114,7 +114,7 @@ export function DockNav({ parentId, children }: PropsWithChildren<{ parentId?: s
 
         event.dataTransfer.dropEffect = "move";
 
-        const { current: dragData } = context.dragData;
+        const { current: dragData } = dock.dragData;
         dragData.dstNodeId = parentId;
         dragData.target = targetIndex;
 
@@ -127,13 +127,13 @@ export function DockNav({ parentId, children }: PropsWithChildren<{ parentId?: s
                 height: rect.height,
             }
         }
-        context.setIndicatorProps(newIndicatorProps)
+        dock.setIndicatorProps(newIndicatorProps)
     }
 
     function onDragLeave(event: React.DragEvent) {
         event.preventDefault();
 
-        const { current: dragData } = context.dragData;
+        const { current: dragData } = dock.dragData;
         dragData.dstNodeId = undefined;
     }
 

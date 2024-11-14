@@ -1,4 +1,4 @@
-import { DockBoxData, DockLayoutData, DockNodeData, DockPanelData, DockTabData, Direction, Region } from "../components/dock-layout/dock-data";
+import { DockBoxData, DockLayoutData, DockNodeData, DockPanelData, DockTabData, Direction, Region } from "./dock-data";
 
 let nodeIdCounter: number = 0;
 

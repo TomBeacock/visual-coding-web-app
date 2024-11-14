@@ -32,16 +32,13 @@
     min-height: 0;
     flex-basis: 0;
     border-radius: 0.5rem;
-    border-width: 1px;
-    border-style: solid;
+    border: 1px solid var(--border-color);
     overflow: hidden;
 
     background-color: var(--gray-50);
-    border-color: var(--gray-300);
 
     [data-theme=dark] & {
         background-color: var(--gray-800);
-        border-color: var(--gray-600);
     }
 }
 
@@ -49,11 +46,20 @@
     display: flex;
     flex-direction: row;
     overflow-x: hidden;
+    overflow-y: hidden;
 
     background-color: var(--gray-100);
 
     [data-theme=dark] & {
         background-color: var(--gray-900);
+    }
+
+    &::after {
+        content: "";
+        flex-grow: 1;
+        border-bottom-width: 1px;
+        border-bottom-style: solid;
+        border-bottom-color: var(--border-color);
     }
 }
 
@@ -65,21 +71,48 @@
     column-gap: 0.25rem;
     padding-block: 0.25rem;
     padding-inline: 0.75rem 1rem;
+    text-transform: uppercase;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-style: solid;
+    font-size: 0.8em;
+
+    color: var(--gray-600);
+    border-color: var(--gray-300);
+
+    [data-theme=dark] & {
+        color: var(--gray-200);
+        border-color: var(--gray-600);
+    }
 
     &[data-selected=true] {
         background-color: var(--gray-50);
+        border-bottom-color: transparent;
 
         [data-theme=dark] & {
             background-color: var(--gray-800);
         }
     }
 
-    &:hover[data-selected=false] {
-        background-color: var(--gray-200);
+    &:hover {
+        color: var(--gray-950);
 
         [data-theme=dark] & {
-            background-color: var(--gray-700);
+            color: var(--gray-50);
         }
+    
+        &[data-selected=false] {
+            background-color: var(--gray-200);
+
+            [data-theme=dark] & {
+                background-color: var(--gray-700);
+            }
+        }
+    }
+
+    & svg {
+        width: 20px;
+        height: 20px;
     }
 }
 
