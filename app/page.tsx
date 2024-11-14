@@ -1,10 +1,13 @@
 "use client"
 
 import "./page.css";
-import VisualCoding from "./visual-coding";
+import { AppProvider } from "./components/app-provider/app-provider";
+import { VisualCoding } from "./visual-coding";
 
 export default function Home() {
   return (
-    <VisualCoding/>
+    <AppProvider>
+      <VisualCoding />
+    </AppProvider>
   );
 }
