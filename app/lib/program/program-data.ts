@@ -25,6 +25,10 @@ export type Pin = {
     index: number,
 }
 
+export type TypedPin = {
+    type: "input" | "output"
+} & Pin;
+
 export type NodeDefinition = {
     name: string,
     inputs: Map<string, VariableType>;

@@ -22,6 +22,7 @@
     display: flex;
     align-items: center;
     padding-inline: 0.5rem;
+    text-transform: capitalize;
 
     background-color: var(--blue-700);
 
@@ -81,6 +82,14 @@
 
     &[data-connected=true] svg {
         fill: currentColor;
+    }
+
+    &.connecting svg {
+        fill: currentColor;
+    }
+
+    &.no-connect {
+        cursor: not-allowed;
     }
 
     &:hover {

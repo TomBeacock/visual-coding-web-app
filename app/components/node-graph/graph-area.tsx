@@ -1,24 +1,60 @@
 import classes from "./graph-area.module.css"
-import { useRef } from "react";
+import { createContext, Dispatch, MutableRefObject, SetStateAction, useContext, useRef, useState } from "react";
 import { clamp } from "@/app/lib/clamp";
+import { Vector2 } from "@/app/lib/vector2";
 import { useProgram } from "../app-provider/app-provider";
 import { GraphNode } from "./graph-node/graph-node";
 import { GraphLink } from "./graph-link/graph-link";
 import { findDefinition } from "@/app/lib/program/program-algorithm";
+import { GraphLinkIndicator, GraphLinkIndicatorProps } from "./graph-link/graph-link-indicator";
+import { Pin, TypedPin, VariableType } from "@/app/lib/program/program-data";
 
 declare module "react" {
     interface CSSProperties {
         "--grid-size"?: string;
+        "--grid-scale"?: number;
     }
 }
+
+type LinkDragData = {
+    origin: Vector2,
+    varType: VariableType,
+    isDragging: boolean,
+    isSnapping: boolean,
+    pin?: TypedPin,
+}
+
+type GraphContextType = {
+    linkIndicatorProps: GraphLinkIndicatorProps,
+    setLinkIndicatorProps: Dispatch<SetStateAction<GraphLinkIndicatorProps>>,
+    linkDragData: MutableRefObject<LinkDragData>,
+    transformPositionToGraph: (position: Vector2) => Vector2;
+}
+
+const GraphContext = createContext({} as GraphContextType);
+
+export const useGraph = () => useContext(GraphContext);
 
 export function GraphArea() {
     const { program, selectedFunction } = useProgram();
 
+    const [linkIndicatorProps, setLinkIndicatorProps] = useState({
+        visible: false,
+        link: { x1: 0, y1: 0, x2: 0, y2: 0, color: "" },
+    } as GraphLinkIndicatorProps);
+
+    const linkDragData = useRef({
+        origin: Vector2.zero(),
+        varType: "exec",
+        isDragging: false,
+        isSnapping: false,
+    } as LinkDragData);
+
     const viewportRef = useRef<HTMLDivElement>(null);
     const areaRef = useRef<HTMLDivElement>(null);
-    const position = useRef({ x: 0, y: 0 });
-    const dragOrigin = useRef({ positionX: 0, positionY: 0, pointerX: 0, pointerY: 0 });
+    const position = useRef(Vector2.zero());
+    const scale = useRef(1);
+    const dragOrigin = useRef(Vector2.zero());
 
     const gridSize = 32;
 
@@ -31,53 +67,85 @@ export function GraphArea() {
         event.stopPropagation();
         document.documentElement.classList.add("move-cursor");
 
-        dragOrigin.current = {
-            positionX: position.current.x,
-            positionY: position.current.y,
-            pointerX: event.clientX,
-            pointerY: event.clientY,
-        };
+        dragOrigin.current = new Vector2(event.clientX, event.clientY);
 
-        window.addEventListener("pointermove", onPointerMove);
-        window.addEventListener("pointerup", onPointerUp);
+        window.addEventListener("pointermove", onWindowPointerMove);
+        window.addEventListener("pointerup", onWindowPointerUp);
     }
 
-    function onPointerMove(event: PointerEvent) {
+    function onWindowPointerMove(event: PointerEvent) {
         if (
             viewportRef.current === null || areaRef.current === null ||
-            position.current === null || dragOrigin.current === null) {
+            position.current === null || scale.current === null || dragOrigin.current === null) {
             return;
         }
 
-        const offset = {
-            x: event.clientX - dragOrigin.current.pointerX,
-            y: event.clientY - dragOrigin.current.pointerY,
-        }
+        const pointerPos = new Vector2(event.clientX, event.clientY);
+        const offset = pointerPos.clone().sub(dragOrigin.current);
+        position.current.add(offset);
+        dragOrigin.current = pointerPos;
 
-        position.current.x = dragOrigin.current.positionX + offset.x;
-        position.current.y = dragOrigin.current.positionY + offset.y;
-
-        const mod: (x: number) => number = x => x % gridSize + gridSize / 2;
-
-        viewportRef.current.style.backgroundPosition = `${mod(position.current.x)}px ${mod(position.current.y)}px`;
-        areaRef.current.style.left = `${position.current.x}px`;
-        areaRef.current.style.top = `${position.current.y}px`;
+        updateTransform();
     }
 
-    function onPointerUp() {
+    function onWindowPointerUp() {
         document.documentElement.classList.remove("move-cursor");
-        window.removeEventListener("pointermove", onPointerMove);
-        window.removeEventListener("pointerup", onPointerUp);
+        window.removeEventListener("pointermove", onWindowPointerMove);
+        window.removeEventListener("pointerup", onWindowPointerUp);
     }
 
     function onWheel(event: React.WheelEvent) {
-        if (areaRef.current === null) {
+        if (position.current === null ||
+            scale.current === null) {
             return;
         }
-        console.log(event.deltaY);
-        const currentScale = Number(areaRef.current.style.scale);
-        const newScale = currentScale + event.deltaY * -0.001;
-        areaRef.current.style.scale = `${clamp(newScale, 0.1, 2.0)}`;
+
+        const pointerPos = new Vector2(event.clientX, event.clientY);
+        const origin = transformScreenPointToGraph(pointerPos);
+
+        // Change zoom on mouse wheel
+        scale.current = clamp(scale.current + event.deltaY * -0.001, 0.1, 2.0);
+
+        // Adjust position to zoom based on pointer position
+        const newOrigin = transformScreenPointToGraph(pointerPos);
+        const offset = newOrigin.sub(origin).mulScalar(scale.current);
+        position.current.add(offset);
+
+        updateTransform();
+    }
+
+    function updateTransform() {
+        if (viewportRef.current === null ||
+            areaRef.current === null ||
+            position.current === null ||
+            scale.current === null
+        ) {
+            return;
+        }
+
+        const scaledGridSize = gridSize * scale.current;
+        const mod: (x: number) => number = x => x % scaledGridSize + scaledGridSize / 2;
+
+        viewportRef.current.style.setProperty("--grid-scale", `${scale.current}`);
+        viewportRef.current.style.backgroundPosition = `${mod(position.current.x)}px ${mod(position.current.y)}px`;
+        areaRef.current.style.left = `${position.current.x}px`;
+        areaRef.current.style.top = `${position.current.y}px`;
+        areaRef.current.style.scale = `${scale.current}`;
+    }
+
+    function transformScreenPointToGraph(point: Vector2) {
+        if (viewportRef.current === null ||
+            position.current === null ||
+            scale.current === null
+        ) {
+            return point.clone();
+        }
+        const rect = viewportRef.current.getBoundingClientRect();
+        // Transform relative to viewport
+        const transformedPoint = point.clone().sub(new Vector2(rect.left, rect.top));
+        // Transform relative to graph
+        transformedPoint.divScalar(scale.current).sub(position.current.clone().divScalar(scale.current));
+        return transformedPoint;
     }
 
     const nodes: React.ReactNode[] = [];
@@ -97,8 +165,8 @@ export function GraphArea() {
                 continue;
             }
             const dstDef = findDefinition(dstNode);
-            if(dstDef === undefined) {
-                continue; 
+            if (dstDef === undefined) {
+                continue;
             }
             const type = [...dstDef.inputs][dst.index][1];
             const color = `var(--type-${type}-color)`;
@@ -115,32 +183,41 @@ export function GraphArea() {
     }
 
     return (
-        <div
-            ref={viewportRef}
-            className={classes.viewport}
-            style={{
-                "--grid-size": `${gridSize}px`,
-                backgroundPosition: `${gridSize / 2}px ${gridSize / 2}px`
-            }}
-            onPointerDown={onPointerDown}
-            onWheel={onWheel}
-        >
+        <GraphContext.Provider
+            value={{
+                linkIndicatorProps, setLinkIndicatorProps,
+                linkDragData,
+                transformPositionToGraph: transformScreenPointToGraph
+            }}>
             <div
-                ref={areaRef}
-                className={classes.area}
+                ref={viewportRef}
+                className={classes.viewport}
                 style={{
-                    scale: 1,
-                    left: 0,
-                    top: 0,
+                    "--grid-size": `${gridSize}px`,
+                    "--grid-scale": 1,
+                    backgroundPosition: `${gridSize / 2}px ${gridSize / 2}px`
                 }}
+                onPointerDown={onPointerDown}
+                onWheel={onWheel}
             >
-                <div>
-                    {links}
-                </div>
-                <div>
-                    {nodes}
+                <div
+                    ref={areaRef}
+                    className={classes.area}
+                    style={{
+                        scale: 1,
+                        left: 0,
+                        top: 0,
+                    }}
+                >
+                    <GraphLinkIndicator {...linkIndicatorProps} />
+                    <div>
+                        {links}
+                    </div>
+                    <div>
+                        {nodes}
+                    </div>
                 </div>
             </div>
-        </div>
+        </GraphContext.Provider>
     );
 }
