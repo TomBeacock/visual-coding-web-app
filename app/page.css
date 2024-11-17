@@ -1,0 +1,13 @@
+body {
+    color: var(--gray-950);
+    background-color: var(--gray-50);
+
+    [data-theme=dark] & {
+        color: var(--gray-50);
+        background-color: var(--gray-800);
+    }
+}
+
+.move-cursor, .move-cursor * {
+    cursor: move !important;
+}

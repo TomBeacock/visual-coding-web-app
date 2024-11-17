@@ -1,10 +1,12 @@
-'use client'
+"use client"
 
-import { ForwardedRef, forwardRef, RefObject, useContext, useImperativeHandle, useRef } from "react";
-import { createDockNode, DockLayoutContext } from "./dock-layout";
+import classes from "./dock-layout.module.css";
+import { RefObject, useRef } from "react";
+import { createDockNode } from "./dock-layout";
 import { DockBoxData, Direction } from "./dock-data";
-import { clamp01 } from "../clamp";
+import { clamp01 } from "../../lib/clamp";
 import { findNodeInLayout, setWeightInLayout } from "./dock-algorithm";
+import { useDock } from "./dock-provider";
 
 type DividerProps = {
     direction: Direction,
@@ -15,7 +17,7 @@ type DividerProps = {
 }
 
 function Divider({ direction, parentRef, index, prevNodeId, nextNodeId }: DividerProps) {
-    const dockLayoutContext = useContext(DockLayoutContext);
+    const dock = useDock();
 
     function onPointerDown(event: React.PointerEvent) {
         event.preventDefault();
@@ -25,7 +27,7 @@ function Divider({ direction, parentRef, index, prevNodeId, nextNodeId }: Divide
     }
 
     function onPointerMove(event: PointerEvent) {
-        if (dockLayoutContext.layout === null || parentRef.current === null) {
+        if (dock.layout === null || parentRef.current === null) {
             return;
         }
 
@@ -41,19 +43,19 @@ function Divider({ direction, parentRef, index, prevNodeId, nextNodeId }: Divide
             nextElement.getBoundingClientRect().right :
             nextElement.getBoundingClientRect().bottom;
 
-        const prevNodeData = findNodeInLayout(dockLayoutContext.layout, prevNodeId);
-        const nextNodeData = findNodeInLayout(dockLayoutContext.layout, nextNodeId);
+        const prevNodeData = findNodeInLayout(dock.layout, prevNodeId);
+        const nextNodeData = findNodeInLayout(dock.layout, nextNodeId);
         const totalWeight =
             (prevNodeData?.weight !== undefined ? prevNodeData.weight : 1) +
             (nextNodeData?.weight !== undefined ? nextNodeData.weight : 1);
 
         const weights = calculateWeights(pos, minBound, maxBound, totalWeight);
 
-        const newLayout = { ...dockLayoutContext.layout };
+        const newLayout = { ...dock.layout };
         setWeightInLayout(newLayout, prevNodeId, weights.prev);
         setWeightInLayout(newLayout, nextNodeId, weights.next);
 
-        dockLayoutContext.setLayout(newLayout);
+        dock.setLayout(newLayout);
     }
 
     function onPointerUp() {
@@ -71,22 +73,18 @@ function Divider({ direction, parentRef, index, prevNodeId, nextNodeId }: Divide
         };
     }
 
-    const className = direction === "row" ?
-        "horizontal cursor-ew-resize" :
-        "vertical cursor-ns-resize";
-
     return (
         <div
-            className={`dock-divider flex-none basis-1.5 ${className}`}
+            className={classes.divider}
+            data-direction={direction}
             onPointerDown={onPointerDown}
         >
         </div>
     );
 }
 
-export const DockBox = forwardRef(function DockBox({ data: { direction, weight, children } }: { data: DockBoxData }, ref: ForwardedRef<HTMLDivElement>) {
-    const selfRef = useRef<HTMLDivElement>(null);
-    useImperativeHandle(ref, () => selfRef.current!);
+export function DockBox({ data: { direction, weight, children } }: { data: DockBoxData }) {
+    const ref = useRef<HTMLDivElement>(null);
 
     // Create child nodes
     const childElements: React.ReactNode[] = []
@@ -97,7 +95,7 @@ export const DockBox = forwardRef(function DockBox({ data: { direction, weight, 
                 <Divider
                     key={i}
                     direction={direction}
-                    parentRef={selfRef}
+                    parentRef={ref}
                     index={(i - 1) * 2 + 1}
                     prevNodeId={children[i - 1].id!}
                     nextNodeId={children[i].id!}
@@ -109,11 +107,12 @@ export const DockBox = forwardRef(function DockBox({ data: { direction, weight, 
 
     return (
         <div
-            ref={selfRef}
-            className={`flex basis-0 ${direction === "row" ? "flex-row" : "flex-col"}`}
+            ref={ref}
+            className={classes.box}
+            data-direction={direction}
             style={{ flexGrow: weight }}
         >
             {childElements}
         </div>
     );
-});
+};
