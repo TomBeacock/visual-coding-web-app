@@ -127,7 +127,7 @@
     border-radius: 0.5rem;
     border-width: 1px;
     border-style: solid;
-    transition: top 0.2ms, left 0.2ms, width 0.2ms, height 0.2ms;
+    transition: top 0.2s, left 0.2s, width 0.2s, height 0.2s;
 
     border-color: var(--blue-400);
     background-color: rgb(from var(--blue-600) r g b / 20%);
