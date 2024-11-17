@@ -7,7 +7,18 @@ import { GraphNode } from "./graph-node/graph-node";
 import { GraphLink } from "./graph-link/graph-link";
 import { findDefinition } from "@/app/lib/program/program-algorithm";
 import { GraphLinkIndicator, GraphLinkIndicatorProps } from "./graph-link/graph-link-indicator";
-import { Pin, TypedPin, VariableType } from "@/app/lib/program/program-data";
+import { TypedPin, VariableType } from "@/app/lib/program/program-data";
+import { Menu, MenuDivider, MenuItem, MenuSub } from "../menu/menu";
+import { 
+    IconArrowIteration,
+    IconArrowsSplit2,
+    IconClipboard,
+    IconDivide,
+    IconMath,
+    IconMinus,
+    IconPlus,
+    IconX
+} from "@tabler/icons-react";
 
 declare module "react" {
     interface CSSProperties {
@@ -50,6 +61,8 @@ export function GraphArea() {
         isSnapping: false,
     } as LinkDragData);
 
+    const [menuPosition, setMenuPosition] = useState<Vector2 | null>(null);
+
     const viewportRef = useRef<HTMLDivElement>(null);
     const areaRef = useRef<HTMLDivElement>(null);
     const position = useRef(Vector2.zero());
@@ -64,7 +77,6 @@ export function GraphArea() {
         }
 
         event.preventDefault();
-        event.stopPropagation();
         document.documentElement.classList.add("move-cursor");
 
         dragOrigin.current = new Vector2(event.clientX, event.clientY);
@@ -112,6 +124,20 @@ export function GraphArea() {
         position.current.add(offset);
 
         updateTransform();
+    }
+
+    function onContextMenu(event: React.MouseEvent) {
+        if(event.defaultPrevented) {
+            return;
+        }
+        event.preventDefault();
+        setMenuPosition(new Vector2(event.clientX, event.clientY));
+        window.addEventListener("pointerdown", onWindowPointerDown);
+    }
+
+    function onWindowPointerDown() {
+        setMenuPosition(null);
+        window.removeEventListener("pointerdown", onWindowPointerDown);
     }
 
     function updateTransform() {
@@ -199,6 +225,7 @@ export function GraphArea() {
                 }}
                 onPointerDown={onPointerDown}
                 onWheel={onWheel}
+                onContextMenu={onContextMenu}
             >
                 <div
                     ref={areaRef}
@@ -217,6 +244,27 @@ export function GraphArea() {
                         {nodes}
                     </div>
                 </div>
+                <Menu
+                    x={menuPosition === null ? 0 : menuPosition.x}
+                    y={menuPosition === null ? 0 : menuPosition.y}
+                    position="right"
+                    visible={menuPosition !== null}
+                >
+                    <MenuItem label="Paste" icon={<IconClipboard />} />
+                    <MenuDivider />
+                    <MenuSub label="Add Node" icon={<IconPlus />}>
+                        <MenuSub label="Flow Control" icon={<IconArrowsSplit2 />}>
+                            <MenuItem label="If" icon={<IconArrowsSplit2 />}/>
+                            <MenuItem label="While" icon={<IconArrowIteration />}/>
+                        </MenuSub>
+                        <MenuSub label="Math" icon={<IconMath />}>
+                            <MenuItem label="Add" icon={<IconPlus />} />
+                            <MenuItem label="Subtract" icon={<IconMinus />} />
+                            <MenuItem label="Multiply" icon={<IconX />} />
+                            <MenuItem label="Divide" icon={<IconDivide />} />
+                        </MenuSub>
+                    </MenuSub>
+                </Menu>
             </div>
         </GraphContext.Provider>
     );

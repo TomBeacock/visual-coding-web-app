@@ -16,12 +16,11 @@ export function GraphNode({ data: { id, lib, func, x, y, } }: GraphNodeProps) {
     const dragOrigin = useRef({ pointerX: 0, pointerY: 0 });
 
     function onPointerDown(event: React.PointerEvent) {
-        if (dragOrigin.current === null || event.button !== 0) {
+        if (dragOrigin.current === null || event.button !== 0 || event.defaultPrevented) {
             return;
         }
 
         event.preventDefault();
-        event.stopPropagation();
         document.documentElement.classList.add("move-cursor");
 
         dragOrigin.current = {

@@ -35,6 +35,7 @@
     display: flex;
     flex-direction: column;
     padding-inline: 0.25rem;
+    font-size: 0.875em;
 }
 
 .row {

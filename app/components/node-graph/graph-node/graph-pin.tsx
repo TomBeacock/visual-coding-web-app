@@ -2,7 +2,7 @@ import classes from "./graph-node.module.css";
 import { useRef } from "react";
 import { IconCircle, IconPlayerPlay } from "@tabler/icons-react";
 import { Vector2 } from "@/app/lib/vector2";
-import { Link, VariableType, Pin as PinType, TypedPin } from "@/app/lib/program/program-data";
+import { VariableType, TypedPin } from "@/app/lib/program/program-data";
 import { addLink, getVariableTypeColor, pinEqual, removePinLinks } from "@/app/lib/program/program-algorithm";
 import { useProgram } from "../../app-provider/app-provider";
 import { useGraph } from "../graph-area";
@@ -44,7 +44,7 @@ export function Pin({ connected, pin, varType, x, y }: PinProps) {
 
         // Create new link
         if (event.button === 0) {
-            event.stopPropagation();
+            event.preventDefault();
 
             // Prevent new link under conditions
             if (connected &&
@@ -78,7 +78,7 @@ export function Pin({ connected, pin, varType, x, y }: PinProps) {
         }
         // Delete link
         else if (event.button === 2) {
-            event.stopPropagation();
+            event.preventDefault();
 
             if (!connected) {
                 return;
