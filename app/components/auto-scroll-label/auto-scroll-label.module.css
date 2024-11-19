@@ -1,0 +1,17 @@
+.label {
+    width: 100%;
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    container-type: inline-size;
+
+    &:not(:hover) {
+        text-overflow: ellipsis;
+    }
+
+    &:hover span {
+        display: inline-block;
+        translate: min(0px, calc(100cqi - 100%)) 0;
+        transition: translate 0.5s ease-in-out;
+    }
+}
