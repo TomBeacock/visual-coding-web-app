@@ -19,6 +19,12 @@ export class Vector2 {
         return this;
     }
 
+    addScalar(s: number): Vector2 {
+        this.x += s;
+        this.y += s;
+        return this;
+    }
+
     static add(v1: Vector2, v2: Vector2) {
         return new Vector2(v1.x + v2.x, v1.y + v2.y);
     }
@@ -26,6 +32,12 @@ export class Vector2 {
     sub(v: Vector2): Vector2 {
         this.x -= v.x;
         this.y -= v.y;
+        return this;
+    }
+
+    subScalar(s: number): Vector2 {
+        this.x -= s;
+        this.y -= s;
         return this;
     }
 
