@@ -1,6 +1,6 @@
 import classes from "./graph-node.module.css";
 import { CSSProperties, ReactNode, useRef } from "react";
-import { Node, Pin, PinType, TypedPin, VariableType } from "@/app/lib/program/program-data";
+import { Node, TypedPin, VariableType } from "@/app/lib/program/program-data";
 import { useProgram } from "../../app-provider/app-provider";
 import { findDefinition } from "@/app/lib/program/program-algorithm";
 import { GraphPin } from "./graph-pin";
@@ -218,7 +218,7 @@ type GraphConstantProps = {
 }
 
 function GraphConstant({ value, connected, pin, varType, pinX, pinY }: GraphConstantProps) {
-    let input = (function () {
+    const input = (function () {
         switch (typeof value) {
             case "boolean": return <Checkbox defaultChecked={value}/>;
             case "number": return <NumberInput defaultValue={value} selectOnFocus />;

@@ -136,7 +136,7 @@ export function GraphArea() {
         window.addEventListener("pointerdown", onWindowPointerDown);
     }
 
-    function onWindowPointerDown(event: PointerEvent) {
+    function onWindowPointerDown() {
         setMenuPosition(null);
         window.removeEventListener("pointerdown", onWindowPointerDown);
     }
