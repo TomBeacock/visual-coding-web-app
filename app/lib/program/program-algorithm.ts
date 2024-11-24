@@ -1,4 +1,5 @@
-import { Node, NodeDefinition, Pin, Program, TypedPin, VariableType } from "./program-data";
+import { v7 as uuid } from "uuid";
+import { Node, NodeDefinition, Pin, Program, TypedPin } from "./program-data";
 import { std } from "./program-std";
 
 export function pinEqual(a: TypedPin, b: TypedPin) {
@@ -6,31 +7,40 @@ export function pinEqual(a: TypedPin, b: TypedPin) {
 }
 
 export function findDefinition(node: Node): NodeDefinition | undefined {
-    if (node.lib === "std") {
-        return std.get(node.func);
+    if(node.type === "constant") {
+        return std.get(typeof node.value);
+    }
+    else {
+        if (node.lib === "std") {
+            return std.get(node.func);
+        }
     }
     return undefined;
 }
 
-export function getVariableTypeColor(varType: VariableType) {
-    return `var(--type-${varType}-color)`;
+export function addNode(program: Program, functionName: string, node: Node) {
+    const f = program.functions.get(functionName);
+    if (f !== undefined) {
+        node.id = uuid();
+        f.nodes.push(node);
+    }
 }
 
 export function addLink(program: Program, functionName: string, src: Pin, dst: Pin) {
-    const func = program.functions.get(functionName);
-    if (func !== undefined) {
-        func.links.push({ src, dst });
+    const f = program.functions.get(functionName);
+    if (f !== undefined) {
+        f.links.push({ src, dst });
     }
 }
 
 export function removePinLinks(program: Program, functionName: string, pin: TypedPin) {
-    const func = program.functions.get(functionName);
-    if (func !== undefined) {
-        let i = func.links.length;
+    const f = program.functions.get(functionName);
+    if (f !== undefined) {
+        let i = f.links.length;
         while (i--) {
-            if (pinEqual({ ...func.links[i].src, type: "output" }, pin) ||
-                pinEqual({ ...func.links[i].dst, type: "input" }, pin)) {
-                func.links.splice(i, 1);
+            if (pinEqual({ ...f.links[i].src, type: "output" }, pin) ||
+                pinEqual({ ...f.links[i].dst, type: "input" }, pin)) {
+                f.links.splice(i, 1);
             }
         }
     }

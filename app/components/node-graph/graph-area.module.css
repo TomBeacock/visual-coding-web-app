@@ -8,17 +8,27 @@
     background-color: var(--gray-200);
     background-image: radial-gradient(var(--gray-300) 1px, transparent 0);
 
-    --type-exec-color: #000000;
-    --type-boolean-color: #ae00ff;
-    --type-number-color: var(--blue-400);
+    --type-exec-color: #525252;
+    --type-boolean-color: #e02d2d;
+    --type-number-color: #09b903;
+    --type-string-color: #ffc400;
 
+    --category-flow-control-color: var(--gray-400);
+    --category-math-color: #09b903;
+    --category-logic-color: #e02d2d;
+    
     [data-theme=dark] & {
         background-color: var(--gray-950);
         background-image: radial-gradient(var(--gray-800) 1px, transparent 0);
-
+        
         --type-exec-color: #ffffff;
-        --type-boolean-color: #ae00ff;
-        --type-number-color: var(--blue-500);
+        --type-boolean-color: #c53838;
+        --type-number-color: #228a33;
+        --type-string-color: #f7d61a;
+        
+        --category-flow-control-color: var(--gray-500);
+        --category-math-color: #228a33;
+        --category-logic-color: #c53838;
     }
 }
 

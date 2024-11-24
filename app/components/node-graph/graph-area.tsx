@@ -1,29 +1,26 @@
 import classes from "./graph-area.module.css"
-import { createContext, Dispatch, MutableRefObject, SetStateAction, useContext, useRef, useState } from "react";
+import { createContext, Dispatch, MutableRefObject, ReactNode, SetStateAction, useContext, useRef, useState } from "react";
 import { clamp } from "@/app/lib/clamp";
 import { Vector2 } from "@/app/lib/vector2";
 import { useProgram } from "../app-provider/app-provider";
 import { GraphNode } from "./graph-node/graph-node";
 import { GraphLink } from "./graph-link/graph-link";
-import { findDefinition } from "@/app/lib/program/program-algorithm";
+import { addNode, findDefinition } from "@/app/lib/program/program-algorithm";
 import { GraphLinkIndicator, GraphLinkIndicatorProps } from "./graph-link/graph-link-indicator";
-import { TypedPin, VariableType } from "@/app/lib/program/program-data";
+import { Node, TypedPin, VariableType } from "@/app/lib/program/program-data";
 import { Menu, MenuDivider, MenuItem, MenuSub } from "../menu/menu";
-import { 
-    IconArrowIteration,
-    IconArrowsSplit2,
+import {
     IconClipboard,
-    IconDivide,
-    IconMath,
-    IconMinus,
     IconPlus,
-    IconX
 } from "@tabler/icons-react";
+import { std, stdCategories } from "@/app/lib/program/program-std";
+import { camelCaseToWords, getIcon } from "@/app/lib/program/program-util";
 
 declare module "react" {
     interface CSSProperties {
         "--grid-size"?: string;
         "--grid-scale"?: number;
+        "--node-cell-width"?: number;
     }
 }
 
@@ -39,7 +36,10 @@ type GraphContextType = {
     linkIndicatorProps: GraphLinkIndicatorProps,
     setLinkIndicatorProps: Dispatch<SetStateAction<GraphLinkIndicatorProps>>,
     linkDragData: MutableRefObject<LinkDragData>,
-    transformPositionToGraph: (position: Vector2) => Vector2;
+    gridSize: number,
+    nodeCellWidth: number,
+    snapPointToGrid: (point: Vector2) => void,
+    transformScreenPointToGraph: (point: Vector2) => Vector2,
 }
 
 const GraphContext = createContext({} as GraphContextType);
@@ -47,7 +47,7 @@ const GraphContext = createContext({} as GraphContextType);
 export const useGraph = () => useContext(GraphContext);
 
 export function GraphArea() {
-    const { program, selectedFunction } = useProgram();
+    const { program, setProgram, selectedFunction } = useProgram();
 
     const [linkIndicatorProps, setLinkIndicatorProps] = useState({
         visible: false,
@@ -70,6 +70,7 @@ export function GraphArea() {
     const dragOrigin = useRef(Vector2.zero());
 
     const gridSize = 32;
+    const nodeDefaultWidth = 6;
 
     function onPointerDown(event: React.PointerEvent) {
         if (dragOrigin.current === null || event.button !== 1) {
@@ -116,7 +117,7 @@ export function GraphArea() {
         const origin = transformScreenPointToGraph(pointerPos);
 
         // Change zoom on mouse wheel
-        scale.current = clamp(scale.current + event.deltaY * -0.001, 0.1, 2.0);
+        scale.current = clamp(scale.current + event.deltaY * -0.001, 0.1, 3.0);
 
         // Adjust position to zoom based on pointer position
         const newOrigin = transformScreenPointToGraph(pointerPos);
@@ -127,7 +128,7 @@ export function GraphArea() {
     }
 
     function onContextMenu(event: React.MouseEvent) {
-        if(event.defaultPrevented) {
+        if (event.defaultPrevented) {
             return;
         }
         event.preventDefault();
@@ -135,7 +136,7 @@ export function GraphArea() {
         window.addEventListener("pointerdown", onWindowPointerDown);
     }
 
-    function onWindowPointerDown() {
+    function onWindowPointerDown(event: PointerEvent) {
         setMenuPosition(null);
         window.removeEventListener("pointerdown", onWindowPointerDown);
     }
@@ -149,14 +150,19 @@ export function GraphArea() {
             return;
         }
 
-        const scaledGridSize = gridSize * scale.current;
-        const mod: (x: number) => number = x => x % scaledGridSize + scaledGridSize / 2;
+        const halfGridSize = gridSize * scale.current * 0.5;
+        const bgPos = position.current.clone().addScalar(halfGridSize);
 
         viewportRef.current.style.setProperty("--grid-scale", `${scale.current}`);
-        viewportRef.current.style.backgroundPosition = `${mod(position.current.x)}px ${mod(position.current.y)}px`;
+        viewportRef.current.style.backgroundPosition = `${bgPos.x}px ${bgPos.y}px`;
         areaRef.current.style.left = `${position.current.x}px`;
         areaRef.current.style.top = `${position.current.y}px`;
         areaRef.current.style.scale = `${scale.current}`;
+    }
+
+    function snapPointToGrid(point: Vector2) {
+        point.x = Math.round(point.x / gridSize) * gridSize;
+        point.y = Math.round(point.y / gridSize) * gridSize;
     }
 
     function transformScreenPointToGraph(point: Vector2) {
@@ -174,13 +180,36 @@ export function GraphArea() {
         return transformedPoint;
     }
 
-    const nodes: React.ReactNode[] = [];
-    const links: React.ReactNode[] = [];
+    function onCreateNode(name: string) {
+        let p = Vector2.zero();
+        if (menuPosition !== null) {
+            p = transformScreenPointToGraph(menuPosition);
+            snapPointToGrid(p);
+        }
+
+        const newProgram = { ...program };
+        const newNode: Node = (function () {
+            switch (name) {
+                case "boolean": return { id: "", x: p.x, y: p.y, type: "constant", value: false };
+                case "number": return { id: "", x: p.x, y: p.y, type: "constant", value: 0 };
+                case "string": return { id: "", x: p.x, y: p.y, type: "constant", value: "" };
+                default: return { id: "", x: p.x, y: p.y, type: "function", lib: "std", func: name };
+            }
+        })();
+        addNode(newProgram, selectedFunction, newNode);
+        setProgram(newProgram);
+
+        setMenuPosition(null);
+    }
+
+    // Generate links and node from program
+    const nodes: ReactNode[] = [];
+    const links: ReactNode[] = [];
 
     const func = program.functions.get(selectedFunction);
     if (func !== undefined) {
         for (const node of func.nodes) {
-            nodes.push(<GraphNode key={node.id} data={node} />);
+            nodes.push(<GraphNode key={node.id} node={node} />);
         }
 
         let key = 0;
@@ -190,16 +219,21 @@ export function GraphArea() {
             if (srcNode === undefined || dstNode === undefined) {
                 continue;
             }
+            const srcDef = findDefinition(srcNode);
+            if (srcDef === undefined) {
+                continue;
+            }
             const dstDef = findDefinition(dstNode);
             if (dstDef === undefined) {
                 continue;
             }
             const type = [...dstDef.inputs][dst.index][1];
             const color = `var(--type-${type}-color)`;
+            const width = srcDef.widthOverride || nodeDefaultWidth;
             links.push(<GraphLink
                 key={key}
-                x1={srcNode.x + gridSize * 7.5}
-                y1={srcNode.y + gridSize * (src.index + 1.5)}
+                x1={srcNode.x + gridSize * (width - 0.5)}
+                y1={srcNode.y + gridSize * (src.index + (srcNode.type === "constant" ? 0.5 : 1.5))}
                 x2={dstNode.x + gridSize * 0.5}
                 y2={dstNode.y + gridSize * (dstDef.outputs.size + dst.index + 1.5)}
                 color={color}
@@ -208,19 +242,54 @@ export function GraphArea() {
         }
     }
 
+    // Generate add node menu
+    const categorisedFuncs = new Map<string, ReactNode[]>();
+    for (const def of std.values()) {
+        let category = categorisedFuncs.get(def.category);
+        if (category === undefined) {
+            category = categorisedFuncs.set(def.category, []).get(def.category);
+        }
+        category?.push(
+            <MenuItem
+                key={def.name}
+                label={camelCaseToWords(def.name)}
+                icon={getIcon(def.icon)}
+                onClick={() => onCreateNode(def.name)}
+            />
+        );
+    }
+
+    const addNodeMenu: ReactNode[] = [];
+    for (const [category, nodes] of categorisedFuncs) {
+        const def = stdCategories.get(category) || { name: "default", icon: "default" };
+        addNodeMenu.push(
+            <MenuSub
+                key={category}
+                label={camelCaseToWords(category)}
+                icon={getIcon(def.icon)}
+            >
+                {nodes}
+            </MenuSub>
+        );
+    }
+
     return (
         <GraphContext.Provider
             value={{
                 linkIndicatorProps, setLinkIndicatorProps,
                 linkDragData,
-                transformPositionToGraph: transformScreenPointToGraph
+                gridSize,
+                nodeCellWidth: nodeDefaultWidth,
+                snapPointToGrid,
+                transformScreenPointToGraph
             }}>
             <div
                 ref={viewportRef}
                 className={classes.viewport}
                 style={{
                     "--grid-size": `${gridSize}px`,
-                    "--grid-scale": 1,
+                    "--grid-scale": scale.current,
+                    "--node-cell-width": nodeDefaultWidth,
                     backgroundPosition: `${gridSize / 2}px ${gridSize / 2}px`
                 }}
                 onPointerDown={onPointerDown}
@@ -253,16 +322,7 @@ export function GraphArea() {
                     <MenuItem label="Paste" icon={<IconClipboard />} />
                     <MenuDivider />
                     <MenuSub label="Add Node" icon={<IconPlus />}>
-                        <MenuSub label="Flow Control" icon={<IconArrowsSplit2 />}>
-                            <MenuItem label="If" icon={<IconArrowsSplit2 />}/>
-                            <MenuItem label="While" icon={<IconArrowIteration />}/>
-                        </MenuSub>
-                        <MenuSub label="Math" icon={<IconMath />}>
-                            <MenuItem label="Add" icon={<IconPlus />} />
-                            <MenuItem label="Subtract" icon={<IconMinus />} />
-                            <MenuItem label="Multiply" icon={<IconX />} />
-                            <MenuItem label="Divide" icon={<IconDivide />} />
-                        </MenuSub>
+                        {addNodeMenu}
                     </MenuSub>
                 </Menu>
             </div>

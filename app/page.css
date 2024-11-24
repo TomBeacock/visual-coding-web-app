@@ -8,6 +8,6 @@ body {
     }
 }
 
-.move-cursor, .move-cursor * {
-    cursor: move !important;
+.grabbing-cursor, .grabbing-cursor * {
+    cursor: grabbing !important;
 }

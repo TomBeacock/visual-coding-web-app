@@ -9,22 +9,29 @@ import { useDock } from "./dock-provider";
 
 export function DockPanel({ data: { id, weight, selectedTabId, children } }: { data: DockPanelData }) {
     const ref = useRef<HTMLDivElement>(null);
-    const dock = useDock();
+    const { dragData, setIndicatorProps } = useDock();
 
     function onDragEnter(event: React.DragEvent) {
+        if (dragData.current.srcNodeId === undefined) {
+            return;
+        }
         event.preventDefault();
     }
 
     function onDragOver(event: React.DragEvent) {
-        event.preventDefault();
+        if (dragData.current.srcNodeId === undefined) {
+            return;
+        }
 
+        event.preventDefault();
 
         if (ref.current === null) {
             return;
         }
 
-        const { current: dragData } = dock.dragData;
-        if (dragData.dstNodeId !== undefined && (dragData.dstNodeId !== id || typeof dragData.target === "number")) {
+        if (dragData.current.dstNodeId !== undefined &&
+            (dragData.current.dstNodeId !== id || typeof dragData.current.target === "number")
+        ) {
             return;
         }
 
@@ -34,21 +41,19 @@ export function DockPanel({ data: { id, weight, selectedTabId, children } }: { d
 
         event.dataTransfer.dropEffect = "move";
 
-        dragData.dstNodeId = id;
-        dragData.target = region;
+        dragData.current.dstNodeId = id;
+        dragData.current.target = region;
 
         const newIndicatorProps = {
             visible: true,
             rect: calculateRegionRect(rect, region),
         };
-        dock.setIndicatorProps(newIndicatorProps);
+        setIndicatorProps(newIndicatorProps);
     }
 
     function onDragLeave(event: React.DragEvent) {
         event.preventDefault();
-
-        const { current: dragData } = dock.dragData;
-        dragData.dstNodeId = undefined;
+        dragData.current.dstNodeId = undefined;
     }
 
     const tabElements: React.ReactNode[] = [];
@@ -84,16 +89,22 @@ export function DockPanel({ data: { id, weight, selectedTabId, children } }: { d
 };
 
 export function DockNav({ parentId, children }: PropsWithChildren<{ parentId?: string }>) {
-    const dock = useDock();
+    const { dragData, setIndicatorProps } = useDock();
     const ref = useRef<HTMLDivElement>(null)
 
     function onDragEnter(event: React.DragEvent) {
+        if(dragData.current.srcNodeId === undefined) {
+            return;
+        }
         event.preventDefault();
 
         event.dataTransfer.dropEffect = "move";
     }
 
     function onDragOver(event: React.DragEvent) {
+        if (dragData.current.srcNodeId === undefined) {
+            return;
+        }
         event.preventDefault();
 
         if (ref.current === null) {
@@ -114,9 +125,8 @@ export function DockNav({ parentId, children }: PropsWithChildren<{ parentId?: s
 
         event.dataTransfer.dropEffect = "move";
 
-        const { current: dragData } = dock.dragData;
-        dragData.dstNodeId = parentId;
-        dragData.target = targetIndex;
+        dragData.current.dstNodeId = parentId;
+        dragData.current.target = targetIndex;
 
         const newIndicatorProps = {
             visible: true,
@@ -127,14 +137,16 @@ export function DockNav({ parentId, children }: PropsWithChildren<{ parentId?: s
                 height: rect.height,
             }
         }
-        dock.setIndicatorProps(newIndicatorProps)
+        setIndicatorProps(newIndicatorProps)
     }
 
     function onDragLeave(event: React.DragEvent) {
+        if (dragData.current.srcNodeId === undefined) {
+            return;
+        }
         event.preventDefault();
 
-        const { current: dragData } = dock.dragData;
-        dragData.dstNodeId = undefined;
+        dragData.current.dstNodeId = undefined;
     }
 
     function onWheel(event: React.WheelEvent) {

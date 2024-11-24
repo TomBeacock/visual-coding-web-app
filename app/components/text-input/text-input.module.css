@@ -1,0 +1,19 @@
+.input {
+    & input {
+        appearance: none;
+        width: 100%;
+        border-radius: 0.25rem;
+        border: 1px solid var(--border-color);
+        padding-inline: 0.25rem;
+        
+        background-color: var(--gray-100);
+        
+        [data-theme=dark] & {
+            background-color: var(--gray-900);
+        }
+
+        &:focus {
+            outline: none;
+        }
+    }
+}
