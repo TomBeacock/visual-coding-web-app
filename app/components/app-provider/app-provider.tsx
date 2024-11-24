@@ -21,14 +21,8 @@ export function AppProvider({ children }: PropsWithChildren) {
     const [program, setProgram] = useState({
         functions: new Map<string, Func>([
             ["main", {
-                nodes: [
-                    { id: 0, lib: "std", func: "add", x: 32, y: 32 },
-                    { id: 1, lib: "std", func: "add", x: 256, y: 256 },
-                    { id: 2, lib: "std", func: "if", x: 576, y: 256 },
-                ],
-                links: [
-                    { src: { nodeId: 0, index: 0 }, dst: { nodeId: 1, index: 0 } }
-                ],
+                nodes: [],
+                links: [],
             }]
         ])
     } as Program);

@@ -8,7 +8,7 @@ type ClientPortalProps = PropsWithChildren<{
 export default function Portal({ target, children }: ClientPortalProps) {
     const ref = useRef<HTMLElement | null>(null);
     const [mounted, setMounted] = useState(false);
-
+    
     useEffect(() => {
         ref.current = document.querySelector(target || "body");
         setMounted(true);

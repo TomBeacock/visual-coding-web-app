@@ -1,6 +1,6 @@
 .menu {
     position: fixed;
-    width: 12.5rem;
+    min-width: 12.5rem;
     display: flex;
     flex-direction: column;
     border-radius: 0.25rem;
@@ -38,6 +38,7 @@
 
     & :nth-child(2) {
         flex-grow: 1;
+        white-space: nowrap;
     }
 
     &:hover {

@@ -1,8 +1,8 @@
 "use client"
 
 import classes from "./menu.module.css";
-import { PropsWithChildren, ReactNode, useState } from "react";
-import Portal from "../portal";
+import { MouseEventHandler, PropsWithChildren, ReactNode, useState } from "react";
+import Portal from "../portal/portal";
 import { IconChevronRight } from "@tabler/icons-react";
 
 type MenuProps = PropsWithChildren<{
@@ -13,12 +13,18 @@ type MenuProps = PropsWithChildren<{
 }>
 
 export function Menu({ x, y, visible, children }: MenuProps) {
+    function onPointerDown(event: React.PointerEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
     return (
         <Portal>
             <div
                 className={classes.menu}
                 data-visible={visible}
                 style={{ left: x, top: y }}
+                onPointerDown={onPointerDown}
             >
                 {children}
             </div>
@@ -26,20 +32,15 @@ export function Menu({ x, y, visible, children }: MenuProps) {
     )
 }
 
-type MenuTargetProps = PropsWithChildren
-
-export function MenuTarget({ children }: MenuTargetProps) {
-    return <>{children}</>;
-}
-
 type MenuItemProps = {
     icon?: ReactNode,
     label?: string,
+    onClick?: MouseEventHandler,
 }
 
-export function MenuItem({ icon, label }: MenuItemProps) {
+export function MenuItem({ icon, label, onClick }: MenuItemProps) {
     return (
-        <button className={classes.item}>
+        <button className={classes.item} onClick={onClick}>
             <>{icon}</>
             <span>{label}</span>
         </button>
@@ -83,9 +84,5 @@ export function MenuSub({ icon, label, children }: MenuSubProps) {
 }
 
 export function MenuDivider() {
-    return (
-        <div className={classes.divider}>
-
-        </div>
-    );
+    return <div className={classes.divider}/>;
 }

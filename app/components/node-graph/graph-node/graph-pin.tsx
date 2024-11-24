@@ -3,12 +3,13 @@ import { useRef } from "react";
 import { IconCircle, IconPlayerPlay } from "@tabler/icons-react";
 import { Vector2 } from "@/app/lib/vector2";
 import { VariableType, TypedPin } from "@/app/lib/program/program-data";
-import { addLink, getVariableTypeColor, pinEqual, removePinLinks } from "@/app/lib/program/program-algorithm";
+import { addLink, pinEqual, removePinLinks } from "@/app/lib/program/program-algorithm";
 import { useProgram } from "../../app-provider/app-provider";
 import { useGraph } from "../graph-area";
 import { GraphLinkIndicatorProps } from "../graph-link/graph-link-indicator";
+import { getVariableTypeColor } from "@/app/lib/program/program-util";
 
-type PinProps = {
+type GraphPinProps = {
     connected?: boolean;
     pin: TypedPin,
     varType: VariableType,
@@ -16,9 +17,9 @@ type PinProps = {
     y: number,
 }
 
-export function Pin({ connected, pin, varType, x, y }: PinProps) {
+export function GraphPin({ connected, pin, varType, x, y }: GraphPinProps) {
     const { program, setProgram, selectedFunction } = useProgram();
-    const { linkIndicatorProps, setLinkIndicatorProps, linkDragData, transformPositionToGraph } = useGraph();
+    const { linkIndicatorProps, setLinkIndicatorProps, linkDragData, transformScreenPointToGraph } = useGraph();
 
     const ref = useRef<HTMLDivElement>(null);
 
@@ -93,9 +94,13 @@ export function Pin({ connected, pin, varType, x, y }: PinProps) {
     function onPointerUp() {
         if (linkDragData.current === null ||
             linkDragData.current.pin === undefined ||
-            ref.current === null ||
-            !isValidConnection()
+            ref.current === null
         ) {
+            return;
+        }
+
+        if (!isValidConnection()) {
+            ref.current.classList.remove(classes["no-connect"]);
             return;
         }
 
@@ -168,7 +173,7 @@ export function Pin({ connected, pin, varType, x, y }: PinProps) {
             return;
         }
 
-        const pos = transformPositionToGraph(new Vector2(event.clientX, event.clientY));
+        const pos = transformScreenPointToGraph(new Vector2(event.clientX, event.clientY));
 
         const newLinkIndicatorProps = {
             visible: true,

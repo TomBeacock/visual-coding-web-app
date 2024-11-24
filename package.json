@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@tabler/icons-react": "^3.21.0",
+    "mathjs": "^14.0.0",
     "next": "^15",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@types/node": "^22",
