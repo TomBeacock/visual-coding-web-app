@@ -13,9 +13,11 @@
     --type-number-color: #09b903;
     --type-string-color: #ffc400;
 
-    --category-flow-control-color: var(--gray-400);
-    --category-math-color: #09b903;
+    --category-control-flow-color: var(--gray-400);
+    --category-arithmetic-color: #09b903;
+    --category-relational-color: #e02d2d;
     --category-logic-color: #e02d2d;
+    --category-bitwise-color: #09b903;
     
     [data-theme=dark] & {
         background-color: var(--gray-950);
@@ -26,9 +28,11 @@
         --type-number-color: #228a33;
         --type-string-color: #f7d61a;
         
-        --category-flow-control-color: var(--gray-500);
-        --category-math-color: #228a33;
+        --category-control-flow-color: var(--gray-500);
+        --category-arithmetic-color: #228a33;
+        --category-relational-color: #c53838;
         --category-logic-color: #c53838;
+        --category-bitwise-color: #228a33;
     }
 }
 

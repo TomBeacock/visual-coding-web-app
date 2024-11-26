@@ -5,15 +5,20 @@ import { Vector2 } from "@/app/lib/vector2";
 import { useProgram } from "../app-provider/app-provider";
 import { GraphNode } from "./graph-node/graph-node";
 import { GraphLink } from "./graph-link/graph-link";
-import { addNode, findDefinition } from "@/app/lib/program/program-algorithm";
+import { addNode, createNode, findDefinition } from "@/app/lib/program/program-algorithm";
 import { GraphLinkIndicator, GraphLinkIndicatorProps } from "./graph-link/graph-link-indicator";
-import { Node, TypedPin, VariableType } from "@/app/lib/program/program-data";
+import { NodeDefinition, TypedPin, VariableType } from "@/app/lib/program/program-data";
 import { Menu, MenuDivider, MenuItem, MenuSub } from "../menu/menu";
 import {
     IconClipboard,
     IconPlus,
 } from "@tabler/icons-react";
-import { std, stdCategories } from "@/app/lib/program/program-std";
+import {
+    constantDefinitions,
+    operationDefinitions,
+    controlFlowDefinitions,
+    coreCategories
+} from "@/app/lib/program/program-core";
 import { camelCaseToWords, getIcon } from "@/app/lib/program/program-util";
 
 declare module "react" {
@@ -180,7 +185,7 @@ export function GraphArea() {
         return transformedPoint;
     }
 
-    function onCreateNode(name: string) {
+    function onCreateNode(def: NodeDefinition) {
         let p = Vector2.zero();
         if (menuPosition !== null) {
             p = transformScreenPointToGraph(menuPosition);
@@ -188,15 +193,7 @@ export function GraphArea() {
         }
 
         const newProgram = { ...program };
-        const newNode: Node = (function () {
-            switch (name) {
-                case "boolean": return { id: "", x: p.x, y: p.y, type: "constant", value: false };
-                case "number": return { id: "", x: p.x, y: p.y, type: "constant", value: 0 };
-                case "string": return { id: "", x: p.x, y: p.y, type: "constant", value: "" };
-                default: return { id: "", x: p.x, y: p.y, type: "function", lib: "std", func: name };
-            }
-        })();
-        addNode(newProgram, selectedFunction, newNode);
+        addNode(newProgram, selectedFunction, createNode(def, p.x, p.y));
         setProgram(newProgram);
 
         setMenuPosition(null);
@@ -235,7 +232,7 @@ export function GraphArea() {
                 x1={srcNode.x + gridSize * (width - 0.5)}
                 y1={srcNode.y + gridSize * (src.index + (srcNode.type === "constant" ? 0.5 : 1.5))}
                 x2={dstNode.x + gridSize * 0.5}
-                y2={dstNode.y + gridSize * (dstDef.outputs.size + dst.index + 1.5)}
+                y2={dstNode.y + gridSize * (dstDef.outputs.length + dst.index + 1.5)}
                 color={color}
             />);
             key++;
@@ -244,7 +241,7 @@ export function GraphArea() {
 
     // Generate add node menu
     const categorisedFuncs = new Map<string, ReactNode[]>();
-    for (const def of std.values()) {
+    const addToNodeMenu = (def: NodeDefinition) => {
         let category = categorisedFuncs.get(def.category);
         if (category === undefined) {
             category = categorisedFuncs.set(def.category, []).get(def.category);
@@ -254,14 +251,23 @@ export function GraphArea() {
                 key={def.name}
                 label={camelCaseToWords(def.name)}
                 icon={getIcon(def.icon)}
-                onClick={() => onCreateNode(def.name)}
+                onClick={() => onCreateNode(def)}
             />
         );
+    };
+    for (const def of constantDefinitions.values()) {
+        addToNodeMenu(def);
+    }
+    for (const def of controlFlowDefinitions.values()) {
+        addToNodeMenu(def);
+    }
+    for (const def of operationDefinitions.values()) {
+        addToNodeMenu(def);
     }
 
     const addNodeMenu: ReactNode[] = [];
     for (const [category, nodes] of categorisedFuncs) {
-        const def = stdCategories.get(category) || { name: "default", icon: "default" };
+        const def = coreCategories.get(category) || { name: "default", icon: "default" };
         addNodeMenu.push(
             <MenuSub
                 key={category}

@@ -7,7 +7,7 @@ export type Function = {
     links: Link[],
 }
 
-export type Node = FunctionNode | ConstantNode;
+export type Node = ConstantNode | OperationNode | ControlFlowNode | VariableNode | FunctionNode;
 
 export type NodeBase = {
     id: string,
@@ -20,10 +20,33 @@ export type ConstantNode = NodeBase & {
     value: boolean | number | string;
 }
 
+export type Operation =
+    "add" | "subtract" | "multiply" | "divide" | "negate" | "modulo" | "increment" | "decrement" | // Arithmetic
+    "equal" | "notEqual" | "less" | "lessOrEqual" | "greater" | "greaterOrEqual" | // Comparison/relational
+    "logicalNot" | "logicalAnd" | "logicalOr" | // Logical
+    "not" | "and" | "or" | "xor" | "leftShift" | "rightShift"; // Bitwise
+
+export type OperationNode = NodeBase & {
+    type: "operation",
+    operation: Operation,
+}
+
+export type ControlFlow = "if" | "while"
+
+export type ControlFlowNode = NodeBase & {
+    type: "controlFlow",
+    controlFlow: ControlFlow,
+}
+
+export type VariableNode = NodeBase & {
+    type: "variable",
+    operation: "get" | "set",
+    varName: string,
+}
+
 export type FunctionNode = NodeBase & {
     type: "function",
-    lib: string,
-    func: string,
+    funcName: string,
 }
 
 export type Link = {
@@ -36,19 +59,20 @@ export type Pin = {
     index: number,
 }
 
-export type PinType = "input" | "output";
+export type PinType = "input" | "output"
 
 export type TypedPin = {
     type: PinType,
-} & Pin;
+} & Pin
 
 export type NodeDefinition = {
     name: string,
+    type: "constant" | "operation" | "controlFlow" | "variable" | "function",
     category: string,
     icon: string,
     widthOverride?: number,
-    inputs: Map<string, VariableType>;
-    outputs: Map<string, VariableType>;
+    inputs: [string, VariableType][];
+    outputs: [string, VariableType][];
 }
 
 export type Category = {
@@ -56,4 +80,4 @@ export type Category = {
     icon: string,
 }
 
-export type VariableType = "exec" | "boolean" | "number" | "string" | "object";
+export type VariableType = "exec" | "boolean" | "number" | "string" | "object"

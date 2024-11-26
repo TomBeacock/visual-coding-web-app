@@ -3,13 +3,19 @@ import {
     IconAbc,
     IconArrowIteration,
     IconArrowsSplit2,
+    IconBinary,
+    IconChevronsLeft,
+    IconChevronsRight,
     IconDivide,
     IconEqual,
     IconEqualNot,
+    IconExposureMinus1,
+    IconExposurePlus1,
     IconFunction,
     IconLogicAnd,
     IconLogicNot,
     IconLogicOr,
+    IconLogicXor,
     IconMath,
     IconMathEqualGreater,
     IconMathEqualLower,
@@ -17,6 +23,7 @@ import {
     IconMathLower,
     IconMinus,
     IconNumber123,
+    IconPercentage,
     IconPlus,
     IconToggleRight,
     IconVariable,
@@ -33,26 +40,33 @@ export function getCategoryColor(category: string) {
 
 export function getIcon(icon: string) {
     switch (icon) {
-        case "variable": return <IconVariable />
         case "boolean": return <IconToggleRight />;
         case "number": return <IconNumber123 />;
         case "string": return <IconAbc />;
-        case "branch": return <IconArrowsSplit2 />;
-        case "loop": return <IconArrowIteration />;
         case "math": return <IconMath />;
-        case "add": return <IconPlus />;
-        case "subtract": return <IconMinus />;
-        case "multiply": return <IconX />;
+        case "binary": return <IconBinary />;
+        case "plus": return <IconPlus />;
+        case "minus": return <IconMinus />;
+        case "cross": return <IconX />;
         case "divide": return <IconDivide />;
-        case "and": return <IconLogicAnd />;
-        case "or": return <IconLogicOr />;
-        case "not": return <IconLogicNot />;
+        case "percentage": return <IconPercentage />
+        case "increment": return <IconExposurePlus1 />
+        case "decrement": return <IconExposureMinus1 />
         case "equal": return <IconEqual />;
         case "notEqual": return <IconEqualNot />;
         case "less": return <IconMathLower />;
         case "lessEqual": return <IconMathEqualLower />;
         case "greater": return <IconMathGreater />;
         case "greaterEqual": return <IconMathEqualGreater />;
+        case "not": return <IconLogicNot />;
+        case "and": return <IconLogicAnd />;
+        case "or": return <IconLogicOr />;
+        case "xor": return <IconLogicXor />
+        case "leftShift": return <IconChevronsLeft />
+        case "rightShift": return <IconChevronsRight />
+        case "branch": return <IconArrowsSplit2 />;
+        case "loop": return <IconArrowIteration />;
+        case "variable": return <IconVariable />
         default: return <IconFunction />;
     }
 }

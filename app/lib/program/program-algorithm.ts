@@ -1,27 +1,49 @@
 import { v7 as uuid } from "uuid";
-import { Node, NodeDefinition, Pin, Program, TypedPin } from "./program-data";
-import { std } from "./program-std";
+import { ConstantNode, ControlFlow, Node, NodeDefinition, Operation, Pin, Program, TypedPin } from "./program-data";
+import { constantDefinitions, operationDefinitions, controlFlowDefinitions } from "./program-core";
 
 export function pinEqual(a: TypedPin, b: TypedPin) {
     return a.nodeId === b.nodeId && a.index === b.index && a.type === b.type;
 }
 
 export function findDefinition(node: Node): NodeDefinition | undefined {
-    if(node.type === "constant") {
-        return std.get(typeof node.value);
-    }
-    else {
-        if (node.lib === "std") {
-            return std.get(node.func);
-        }
+    switch (node.type) {
+        case "constant":
+            return constantDefinitions.get(typeof node.value as "boolean" | "number" | "string");
+        case "operation":
+            return operationDefinitions.get(node.operation);
+        case "controlFlow":
+            return controlFlowDefinitions.get(node.controlFlow);
     }
     return undefined;
+}
+
+export function createNode(def: NodeDefinition, x: number, y: number): Node {
+    const base: Pick<Node, "id" | "x" | "y"> = { id: uuid(), x, y };
+    switch (def.type) {
+        case "constant": {
+            const constantBase: Pick<ConstantNode, "id" | "x" | "y" | "type"> =
+                { ...base, type: "constant" };
+            switch (def.name) {
+                case "boolean": return { ...constantBase, value: false };
+                case "number": return { ...constantBase, value: 0 };
+                case "string": return { ...constantBase, value: "" };
+            }
+            break;
+        }
+        case "operation": {
+            return { ...base, type: "operation", operation: def.name as Operation };
+        }
+        case "controlFlow": {
+            return { ...base, type: "controlFlow", controlFlow: def.name as ControlFlow };
+        }
+    }
+    return { ...base, type: "function", funcName: "" };
 }
 
 export function addNode(program: Program, functionName: string, node: Node) {
     const f = program.functions.get(functionName);
     if (f !== undefined) {
-        node.id = uuid();
         f.nodes.push(node);
     }
 }
