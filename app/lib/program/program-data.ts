@@ -1,8 +1,12 @@
+import { Vector2 } from "../vector2";
+
 export type Program = {
     functions: Map<string, Function>,
 }
 
 export type Function = {
+    position: Vector2,
+    scale: number,
     nodes: Node[],
     links: Link[],
 }

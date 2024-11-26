@@ -20,6 +20,7 @@ import {
     coreCategories
 } from "@/app/lib/program/program-core";
 import { camelCaseToWords, getIcon } from "@/app/lib/program/program-util";
+import { transformPoint } from "@/app/lib/transformations";
 
 declare module "react" {
     interface CSSProperties {
@@ -53,6 +54,10 @@ export const useGraph = () => useContext(GraphContext);
 
 export function GraphArea() {
     const { program, setProgram, selectedFunction } = useProgram();
+    const func = program.functions.get(selectedFunction);
+    if (func === undefined) {
+        return <></>;
+    }
 
     const [linkIndicatorProps, setLinkIndicatorProps] = useState({
         visible: false,
@@ -70,8 +75,6 @@ export function GraphArea() {
 
     const viewportRef = useRef<HTMLDivElement>(null);
     const areaRef = useRef<HTMLDivElement>(null);
-    const position = useRef(Vector2.zero());
-    const scale = useRef(1);
     const dragOrigin = useRef(Vector2.zero());
 
     const gridSize = 32;
@@ -92,18 +95,22 @@ export function GraphArea() {
     }
 
     function onWindowPointerMove(event: PointerEvent) {
-        if (
-            viewportRef.current === null || areaRef.current === null ||
-            position.current === null || scale.current === null || dragOrigin.current === null) {
+        if (viewportRef.current === null || areaRef.current === null ||
+            func === undefined || dragOrigin.current === null) {
             return;
         }
 
         const pointerPos = new Vector2(event.clientX, event.clientY);
         const offset = pointerPos.clone().sub(dragOrigin.current);
-        position.current.add(offset);
         dragOrigin.current = pointerPos;
 
-        updateTransform();
+        const newProgram = { ...program };
+        const newFunc = newProgram.functions.get(selectedFunction);
+        if (newFunc === undefined) {
+            return;
+        }
+        newFunc.position.add(offset);
+        setProgram(newProgram);
     }
 
     function onWindowPointerUp() {
@@ -113,23 +120,28 @@ export function GraphArea() {
     }
 
     function onWheel(event: React.WheelEvent) {
-        if (position.current === null ||
-            scale.current === null) {
+        if (func === undefined) {
             return;
         }
 
-        const pointerPos = new Vector2(event.clientX, event.clientY);
-        const origin = transformScreenPointToGraph(pointerPos);
+        // Cache original origin
+        const pointerPos = screenPointToViewport(new Vector2(event.clientX, event.clientY));
+        const origin = transformPoint(pointerPos, func.position, func.scale);
 
+        const newProgram = { ...program };
+        const newFunc = newProgram.functions.get(selectedFunction);
+        if (newFunc === undefined) {
+            return;
+        }
         // Change zoom on mouse wheel
-        scale.current = clamp(scale.current + event.deltaY * -0.001, 0.1, 3.0);
+        newFunc.scale = clamp(func.scale + event.deltaY * -0.001, 0.1, 3.0);
 
         // Adjust position to zoom based on pointer position
-        const newOrigin = transformScreenPointToGraph(pointerPos);
-        const offset = newOrigin.sub(origin).mulScalar(scale.current);
-        position.current.add(offset);
+        const newOrigin = transformPoint(pointerPos, newFunc.position, newFunc.scale);
+        const offset = newOrigin.sub(origin).mulScalar(newFunc.scale);
+        newFunc.position.add(offset);
 
-        updateTransform();
+        setProgram(newProgram);
     }
 
     function onContextMenu(event: React.MouseEvent) {
@@ -146,49 +158,30 @@ export function GraphArea() {
         window.removeEventListener("pointerdown", onWindowPointerDown);
     }
 
-    function updateTransform() {
-        if (viewportRef.current === null ||
-            areaRef.current === null ||
-            position.current === null ||
-            scale.current === null
-        ) {
-            return;
-        }
-
-        const halfGridSize = gridSize * scale.current * 0.5;
-        const bgPos = position.current.clone().addScalar(halfGridSize);
-
-        viewportRef.current.style.setProperty("--grid-scale", `${scale.current}`);
-        viewportRef.current.style.backgroundPosition = `${bgPos.x}px ${bgPos.y}px`;
-        areaRef.current.style.left = `${position.current.x}px`;
-        areaRef.current.style.top = `${position.current.y}px`;
-        areaRef.current.style.scale = `${scale.current}`;
-    }
-
     function snapPointToGrid(point: Vector2) {
         point.x = Math.round(point.x / gridSize) * gridSize;
         point.y = Math.round(point.y / gridSize) * gridSize;
     }
-
-    function transformScreenPointToGraph(point: Vector2) {
-        if (viewportRef.current === null ||
-            position.current === null ||
-            scale.current === null
-        ) {
+    
+    function screenPointToViewport(point: Vector2) {
+        if (viewportRef.current === null) {
             return point.clone();
         }
         const rect = viewportRef.current.getBoundingClientRect();
-        // Transform relative to viewport
-        const transformedPoint = point.clone().sub(new Vector2(rect.left, rect.top));
-        // Transform relative to graph
-        transformedPoint.divScalar(scale.current).sub(position.current.clone().divScalar(scale.current));
-        return transformedPoint;
+        return point.clone().sub(new Vector2(rect.left, rect.top));
+    }
+
+    function transformScreenPointToGraph(point: Vector2) {
+        if (func === undefined) {
+            return point.clone();
+        }
+        return transformPoint(screenPointToViewport(point), func.position, func.scale);
     }
 
     function onCreateNode(def: NodeDefinition) {
         let p = Vector2.zero();
-        if (menuPosition !== null) {
-            p = transformScreenPointToGraph(menuPosition);
+        if (menuPosition !== null && func !== undefined) {
+            p = transformPoint(screenPointToViewport(menuPosition), func.position, func.scale);
             snapPointToGrid(p);
         }
 
@@ -203,40 +196,37 @@ export function GraphArea() {
     const nodes: ReactNode[] = [];
     const links: ReactNode[] = [];
 
-    const func = program.functions.get(selectedFunction);
-    if (func !== undefined) {
-        for (const node of func.nodes) {
-            nodes.push(<GraphNode key={node.id} node={node} />);
-        }
+    for (const node of func.nodes) {
+        nodes.push(<GraphNode key={node.id} node={node} />);
+    }
 
-        let key = 0;
-        for (const { src, dst } of func.links) {
-            const srcNode = func.nodes.find((node) => node.id === src.nodeId);
-            const dstNode = func.nodes.find((node) => node.id === dst.nodeId);
-            if (srcNode === undefined || dstNode === undefined) {
-                continue;
-            }
-            const srcDef = findDefinition(srcNode);
-            if (srcDef === undefined) {
-                continue;
-            }
-            const dstDef = findDefinition(dstNode);
-            if (dstDef === undefined) {
-                continue;
-            }
-            const type = [...dstDef.inputs][dst.index][1];
-            const color = `var(--type-${type}-color)`;
-            const width = srcDef.widthOverride || nodeDefaultWidth;
-            links.push(<GraphLink
-                key={key}
-                x1={srcNode.x + gridSize * (width - 0.5)}
-                y1={srcNode.y + gridSize * (src.index + (srcNode.type === "constant" ? 0.5 : 1.5))}
-                x2={dstNode.x + gridSize * 0.5}
-                y2={dstNode.y + gridSize * (dstDef.outputs.length + dst.index + 1.5)}
-                color={color}
-            />);
-            key++;
+    let key = 0;
+    for (const { src, dst } of func.links) {
+        const srcNode = func.nodes.find((node) => node.id === src.nodeId);
+        const dstNode = func.nodes.find((node) => node.id === dst.nodeId);
+        if (srcNode === undefined || dstNode === undefined) {
+            continue;
         }
+        const srcDef = findDefinition(srcNode);
+        if (srcDef === undefined) {
+            continue;
+        }
+        const dstDef = findDefinition(dstNode);
+        if (dstDef === undefined) {
+            continue;
+        }
+        const type = [...dstDef.inputs][dst.index][1];
+        const color = `var(--type-${type}-color)`;
+        const width = srcDef.widthOverride || nodeDefaultWidth;
+        links.push(<GraphLink
+            key={key}
+            x1={srcNode.x + gridSize * (width - 0.5)}
+            y1={srcNode.y + gridSize * (src.index + (srcNode.type === "constant" ? 0.5 : 1.5))}
+            x2={dstNode.x + gridSize * 0.5}
+            y2={dstNode.y + gridSize * (dstDef.outputs.length + dst.index + 1.5)}
+            color={color}
+        />);
+        key++;
     }
 
     // Generate add node menu
@@ -279,6 +269,10 @@ export function GraphArea() {
         );
     }
 
+
+    const halfGridSize = gridSize * func.scale * 0.5;
+    const bgPos = func.position.clone().addScalar(halfGridSize);
+
     return (
         <GraphContext.Provider
             value={{
@@ -294,9 +288,9 @@ export function GraphArea() {
                 className={classes.viewport}
                 style={{
                     "--grid-size": `${gridSize}px`,
-                    "--grid-scale": scale.current,
+                    "--grid-scale": func.scale,
                     "--node-cell-width": nodeDefaultWidth,
-                    backgroundPosition: `${gridSize / 2}px ${gridSize / 2}px`
+                    backgroundPosition: `${bgPos.x}px ${bgPos.y}px`,
                 }}
                 onPointerDown={onPointerDown}
                 onWheel={onWheel}
@@ -306,9 +300,9 @@ export function GraphArea() {
                     ref={areaRef}
                     className={classes.area}
                     style={{
-                        scale: 1,
-                        left: 0,
-                        top: 0,
+                        left: func.position.x,
+                        top: func.position.y,
+                        scale: func.scale,
                     }}
                 >
                     <GraphLinkIndicator {...linkIndicatorProps} />

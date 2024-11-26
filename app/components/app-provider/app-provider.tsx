@@ -1,6 +1,7 @@
 import { createContext, Dispatch, PropsWithChildren, SetStateAction, useContext, useState } from "react";
 import { Program, Function as Func } from "@/app/lib/program/program-data";
 import { Playback } from "@/app/lib/playback";
+import { Vector2 } from "@/app/lib/vector2";
 
 type ProgramContextType = {
     program: Program,
@@ -21,6 +22,8 @@ export function AppProvider({ children }: PropsWithChildren) {
     const [program, setProgram] = useState({
         functions: new Map<string, Func>([
             ["main", {
+                position: Vector2.zero(),
+                scale: 1,
                 nodes: [],
                 links: [],
             }]
