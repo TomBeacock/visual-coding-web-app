@@ -17,9 +17,10 @@ export default function TextInput({ selectOnFocus, defaultValue, ...props }: Tex
     }
 
     return (
-        <div className={classes.input}>
+        <div>
             <input
                 ref={ref}
+                className={classes.input}
                 type="text"
                 value={value}
                 onChange={(event) => setValue(event.target.value)}

@@ -6,13 +6,7 @@
 }
 
 .action-bar {
-    padding: 0.125rem;
-    border-bottom-width: 1px;
-    border-style: solid;
-
-    border-color: var(--gray-300);
-
-    [data-theme=dark] & {
-        border-color: var(--gray-600);
-    }
+    display: flex;
+    padding: 0.125rem 0.25rem;
+    border-bottom: 1px solid var(--default-border);
 }

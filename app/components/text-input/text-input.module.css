@@ -1,19 +1,15 @@
 .input {
-    & input {
-        appearance: none;
-        width: 100%;
-        border-radius: 0.25rem;
-        border: 1px solid var(--border-color);
-        padding-inline: 0.25rem;
-        
-        background-color: var(--gray-100);
-        
-        [data-theme=dark] & {
-            background-color: var(--gray-900);
-        }
+    --text-input-bg: light-dark(var(--neutral-100), var(--neutral-900));
 
-        &:focus {
-            outline: none;
-        }
+    appearance: none;
+    width: 100%;
+    border-radius: 0.25rem;
+    padding-inline: 0.25rem;
+    background-color: var(--text-input-bg);
+    border: 1px solid var(--default-border);
+
+    &:focus {
+        outline: none;
+        border-color: var(--default-focus);
     }
 }

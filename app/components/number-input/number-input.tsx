@@ -40,9 +40,10 @@ export default function NumberInput({ selectOnFocus, defaultValue, ...props }: N
     }
 
     return (
-        <div className={classes.input}>
+        <div className={classes.root}>
             <input
                 ref={ref}
+                className={classes.input}
                 type="text"
                 value={value}
                 onChange={onChange}

@@ -1,19 +1,21 @@
 .menu {
+    --menu-bg: var(--body-bg);
+    --menu-shadow: light-dark(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.5));
+    --menu-item-fg: light-dark(var(--neutral-600), var(--neutral-300));
+    --menu-item-fg-hover: light-dark(var(--violet-800), var(--body-fg));
+    --menu-item-bg-hover: light-dark(var(--violet-200), var(--violet-500));
+
     position: fixed;
     min-width: 12.5rem;
     display: flex;
     flex-direction: column;
     border-radius: 0.25rem;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--default-border);
     padding-block: 0.25rem;
+    z-index: 999;
 
-    background-color: var(--gray-50);
-    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
-
-    [data-theme=dark] & {
-        background-color: var(--gray-800);
-        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.5);
-    }
+    background-color: var(--menu-bg);
+    box-shadow: 0 0.25rem 0.5rem var(--menu-shadow);
 
     &[data-visible=false] {
         visibility: hidden;
@@ -30,6 +32,7 @@
     text-align: left;
     border-radius: 0.25rem;
     font-size: 0.875em;
+    color: var(--menu-item-fg);
 
     & svg {
         width: 1rem;
@@ -42,11 +45,8 @@
     }
 
     &:hover {
-        background-color: var(--gray-200);
-
-        [data-theme=dark] & {
-            background-color: var(--gray-700);
-        }
+        color: var(--menu-item-fg-hover);
+        background-color: var(--menu-item-bg-hover);
     }
 }
 
@@ -54,6 +54,7 @@
     display: flex;
     flex-direction: column;
     position: relative;
+    color: var(--menu-item-fg);
 
     &>:last-child {
         position: absolute;
@@ -62,17 +63,14 @@
     };
 
     &:hover>.item {
-        background-color: var(--gray-200);
-
-        [data-theme=dark] & {
-            background-color: var(--gray-700);
-        }
+        color: var(--menu-item-fg-hover);
+        background-color: var(--menu-item-bg-hover);
     }
 }
 
 .divider {
     width: 100%;
     height: 1px;
-    background-color: var(--border-color);
+    background-color: var(--default-border);
     margin-block: 0.25rem;
 }

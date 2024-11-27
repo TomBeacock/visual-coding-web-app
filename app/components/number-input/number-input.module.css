@@ -1,33 +1,36 @@
-.input {
+.root {
+    --number-input-bg: light-dark(var(--neutral-100), var(--neutral-900));
+
     position: relative;
     border-radius: 0.25rem;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--default-border);
     overflow: hidden;
-    
-    background-color: var(--gray-100);
-    
-    [data-theme=dark] & {
-        background-color: var(--gray-900);
-    }
-
-    & input {
-        appearance: none;
-        width: 100%;
-        padding-inline: 0.25rem;
-        text-align: center;
-        background: none;
-
-        &:focus {
-            outline: none;
-        }
-    }
+    background-color: var(--number-input-bg);
 
     &:not(:hover) .button, &:has(input:focus) .button {
         display: none;
     }
+
+    &:focus-within {
+        border-color: var(--default-focus);
+    }
+}
+
+.input {
+    appearance: none;
+    width: 100%;
+    padding-inline: 0.25rem;
+    text-align: center;
+    background: none;
+
+    &:focus {
+        outline: none;
+    }
 }
 
 .button {
+    --number-input-button-bg-hover: light-dark(var(--neutral-200), var(--neutral-800));
+
     position: absolute;
     top: 0;
     bottom: 0;
@@ -40,11 +43,7 @@
     }
 
     &:hover {
-        background-color: var(--gray-200);
-
-        [data-theme=dark] & {
-            background-color: var(--gray-700);
-        }
+        background-color: var(--number-input-button-bg-hover);
     }
 }
 

@@ -1,4 +1,7 @@
 .button {
+    --button-bg-hover: light-dark(var(--neutral-200), var(--neutral-700));
+    --button-fg-disabled: light-dark(var(--neutral-400), var(--neutral-600));
+
     display: flex;
     align-items: center;
     column-gap: 0.25rem;
@@ -6,12 +9,12 @@
     border-radius: 0.25rem;
     font-size: 0.875em;
 
-    &:hover {
-        background-color: var(--gray-200);
+    &:hover:not(:disabled) {
+        background-color: var(--button-bg-hover);
+    }
 
-        [data-theme=dark] & {
-            background-color: var(--gray-700);
-        }
+    &:disabled {
+        color: var(--button-fg-disabled);
     }
 
     &[data-icon-only=true] {
@@ -31,13 +34,8 @@
     &>.button {
         border-width: 1px 0px 1px 1px;
         border-style: solid;
+        border-color: var(--default-border);
         border-radius: 0;
-
-        border-color: var(--gray-300);
-
-        [data-theme=dark] & {
-            border-color: var(--gray-600);
-        }
 
         &:first-child {
             border-top-left-radius: 0.25rem;
