@@ -1,6 +1,7 @@
 import { v7 as uuid } from "uuid";
 import { ConstantNode, ControlFlow, Node, NodeDefinition, Operation, Pin, Program, TypedPin } from "./program-data";
 import { constantDefinitions, operationDefinitions, controlFlowDefinitions } from "./program-core";
+import { Vector2 } from "../vector2";
 
 export function pinEqual(a: TypedPin, b: TypedPin) {
     return a.nodeId === b.nodeId && a.index === b.index && a.type === b.type;
@@ -66,4 +67,24 @@ export function removePinLinks(program: Program, functionName: string, pin: Type
             }
         }
     }
+}
+
+export function addFunction(program: Program, name: string) {
+    while (program.functions.has(name)) {
+        name += "Copy";
+    }
+    program.functions.set(name, {
+        position: Vector2.zero(),
+        scale: 1,
+        nodes: [],
+        links: [],
+    });
+    return name;
+}
+
+export function deleteFunction(program: Program, name: string) {
+    if (name === "main") {
+        return;
+    }
+    program.functions.delete(name);
 }

@@ -1,4 +1,6 @@
 import { DockLayoutData } from "./components/dock-layout/dock-data";
+import { SectionGraph } from "./components/sections/section-graph";
+import { SectionFunctions } from "./components/sections/section-functions";
 import {
   IconFunction,
   IconListDetails,
@@ -6,7 +8,6 @@ import {
   IconTerminal,
   IconVariable
 } from "@tabler/icons-react";
-import { SectionGraph } from "./components/sections/section-graph";
 
 const tabIconProps = {
   stroke: 1.5,
@@ -37,7 +38,7 @@ export const defaultLayout = {
               {
                 icon: <IconFunction {...tabIconProps} />,
                 label: "Functions",
-                content: <span>Functions here</span>,
+                content: <SectionFunctions />,
               }
             ]
           },
@@ -46,7 +47,7 @@ export const defaultLayout = {
       {
         type: "box",
         direction: "column",
-        weight: 4,
+        weight: 6,
         children: [
           {
             type: "panel",
