@@ -1,17 +1,50 @@
 import { Vector2 } from "../vector2";
 
 export type Program = {
-    functions: Map<string, Function>,
+    functions: Map<string, UserFunctionDefinition>,
 }
 
-export type Function = {
+export type NodeDefinition = ConstantDefinition | VariableDefinition | CoreFunctionDefinition | UserFunctionDefinition;
+
+export type ConstantVarType = "boolean" | "number" | "string"
+export type PinVarType = "exec" | ConstantVarType
+
+export type ConstantDefinition = {
+    type: "constant";
+    varType: ConstantVarType,
+    icon: string,
+    widthOverride?: number,
+}
+
+export type VariableDefinition = {
+    type: "variable",
+    name: string,
+    varType: ConstantVarType,
+}
+
+export type FunctionDefinition = {
+    name: string,
+    category?: string,
+    icon?: string,
+    widthOverride?: number,
+    inputs: [string, PinVarType][];
+    outputs: [string, PinVarType][];
+}
+
+export type CoreFunctionDefinition = FunctionDefinition & {
+    type: "coreFunction";
+}
+
+export type UserFunctionDefinition = FunctionDefinition & {
+    type: "userFunction";
     position: Vector2,
     scale: number,
     nodes: Node[],
     links: Link[],
+    variables: Map<string, VariableDefinition>,
 }
 
-export type Node = ConstantNode | OperationNode | ControlFlowNode | VariableNode | FunctionNode;
+export type Node = FunctionNode | ConstantNode | VariableNode | CoreFunctionCallNode | UserFunctionCallNode;
 
 export type NodeBase = {
     id: string,
@@ -19,37 +52,34 @@ export type NodeBase = {
     y: number,
 }
 
-export type ConstantNode = NodeBase & {
-    type: "constant",
-    value: boolean | number | string;
-}
-
-export type Operation =
-    "add" | "subtract" | "multiply" | "divide" | "negate" | "modulo" | "increment" | "decrement" | // Arithmetic
-    "equal" | "notEqual" | "less" | "lessOrEqual" | "greater" | "greaterOrEqual" | // Comparison/relational
-    "logicalNot" | "logicalAnd" | "logicalOr" | // Logical
-    "not" | "and" | "or" | "xor" | "leftShift" | "rightShift"; // Bitwise
-
-export type OperationNode = NodeBase & {
-    type: "operation",
-    operation: Operation,
-}
-
-export type ControlFlow = "if" | "while"
-
-export type ControlFlowNode = NodeBase & {
-    type: "controlFlow",
-    controlFlow: ControlFlow,
-}
-
-export type VariableNode = NodeBase & {
-    type: "variable",
-    operation: "get" | "set",
-    varName: string,
-}
+export type FunctionNodeOperation = "entry" | "return"
 
 export type FunctionNode = NodeBase & {
     type: "function",
+    operation: FunctionNodeOperation;
+}
+
+export type ConstantNode = NodeBase & {
+    type: "constant",
+    varType: ConstantVarType,
+    value: boolean | number | string;
+}
+
+export type VariableNodeOperation = "get" | "set"
+
+export type VariableNode = NodeBase & {
+    type: "variable",
+    operation: VariableNodeOperation,
+    varName: string,
+}
+
+export type CoreFunctionCallNode = NodeBase & {
+    type: "coreFunctionCall",
+    funcName: string,
+}
+
+export type UserFunctionCallNode = NodeBase & {
+    type: "userFunctionCall",
     funcName: string,
 }
 
@@ -69,19 +99,7 @@ export type TypedPin = {
     type: PinType,
 } & Pin
 
-export type NodeDefinition = {
-    name: string,
-    type: "constant" | "operation" | "controlFlow" | "variable" | "function",
-    category: string,
-    icon: string,
-    widthOverride?: number,
-    inputs: [string, VariableType][];
-    outputs: [string, VariableType][];
-}
-
 export type Category = {
     name: string,
     icon: string,
 }
-
-export type VariableType = "exec" | "boolean" | "number" | "string" | "object"

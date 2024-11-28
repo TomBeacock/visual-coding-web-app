@@ -1,4 +1,4 @@
-import { VariableType } from "./program-data";
+import { PinVarType } from "./program-data";
 import {
     IconAbc,
     IconArrowIteration,
@@ -30,15 +30,21 @@ import {
     IconX
 } from "@tabler/icons-react";
 
-export function getVariableTypeColor(varType: VariableType) {
+export function getVariableTypeColor(varType: PinVarType) {
     return `var(--type-${varType}-color)`;
 }
 
-export function getCategoryColor(category: string) {
+export function getCategoryColor(category?: string) {
+    if (category === undefined) {
+        return "var(--category-default-color)";
+    }
     return `var(--category-${camelCaseToSnake(category)}-color)`;
 }
 
-export function getIcon(icon: string) {
+export function getIcon(icon?: string) {
+    if (icon === undefined) {
+        return <IconFunction />
+    }
     switch (icon) {
         case "boolean": return <IconToggleRight />;
         case "number": return <IconNumber123 />;

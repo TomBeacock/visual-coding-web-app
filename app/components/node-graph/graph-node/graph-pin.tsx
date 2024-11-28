@@ -2,7 +2,7 @@ import classes from "./graph-node.module.css";
 import { useRef } from "react";
 import { IconCircle, IconPlayerPlay } from "@tabler/icons-react";
 import { Vector2 } from "@/app/lib/vector2";
-import { VariableType, TypedPin } from "@/app/lib/program/program-data";
+import { PinVarType, TypedPin } from "@/app/lib/program/program-data";
 import { addLink, pinEqual, removePinLinks } from "@/app/lib/program/program-algorithm";
 import { useProgram } from "../../app-provider/app-provider";
 import { useGraph } from "../graph-area";
@@ -12,7 +12,7 @@ import { getVariableTypeColor } from "@/app/lib/program/program-util";
 type GraphPinProps = {
     connected?: boolean;
     pin: TypedPin,
-    varType: VariableType,
+    varType: PinVarType,
     x: number,
     y: number,
 }

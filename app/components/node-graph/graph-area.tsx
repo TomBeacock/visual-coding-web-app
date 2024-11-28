@@ -1,24 +1,33 @@
 import classes from "./graph-area.module.css"
-import { createContext, Dispatch, MutableRefObject, ReactNode, SetStateAction, useContext, useRef, useState } from "react";
+import {
+    useContext,
+    useRef, 
+    useState,
+    createContext,
+    ReactNode,
+    MutableRefObject,
+    Dispatch,
+    SetStateAction,
+    MouseEventHandler,
+} from "react";
 import { clamp } from "@/app/lib/clamp";
 import { Vector2 } from "@/app/lib/vector2";
 import { useProgram } from "../app-provider/app-provider";
 import { GraphNode } from "./graph-node/graph-node";
 import { GraphLink } from "./graph-link/graph-link";
-import { addNode, createNode, findDefinition } from "@/app/lib/program/program-algorithm";
 import { GraphLinkIndicator, GraphLinkIndicatorProps } from "./graph-link/graph-link-indicator";
-import { NodeDefinition, TypedPin, VariableType } from "@/app/lib/program/program-data";
 import { Menu, MenuDivider, MenuItem, MenuSub } from "../menu/menu";
 import {
     IconClipboard,
     IconPlus,
 } from "@tabler/icons-react";
+import { Node, TypedPin, PinVarType } from "@/app/lib/program/program-data";
 import {
     constantDefinitions,
-    operationDefinitions,
-    controlFlowDefinitions,
+    coreFunctionDefinitions,
     coreCategories
 } from "@/app/lib/program/program-core";
+import { addNode, createConstantNode, createCoreFunctionCallNode, findDefinition } from "@/app/lib/program/program-algorithm";
 import { camelCaseToWords, getIcon } from "@/app/lib/program/program-util";
 import { transformPoint } from "@/app/lib/transformations";
 
@@ -32,7 +41,7 @@ declare module "react" {
 
 type LinkDragData = {
     origin: Vector2,
-    varType: VariableType,
+    varType: PinVarType,
     isDragging: boolean,
     isSnapping: boolean,
     pin?: TypedPin,
@@ -54,28 +63,29 @@ export const useGraph = () => useContext(GraphContext);
 
 export function GraphArea() {
     const { program, setProgram, selectedFunction } = useProgram();
-    const func = program.functions.get(selectedFunction);
-    if (func === undefined) {
-        return <></>;
-    }
-
+    
     const [linkIndicatorProps, setLinkIndicatorProps] = useState({
         visible: false,
         link: { x1: 0, y1: 0, x2: 0, y2: 0, color: "" },
     } as GraphLinkIndicatorProps);
-
+    
     const linkDragData = useRef({
         origin: Vector2.zero(),
         varType: "exec",
         isDragging: false,
         isSnapping: false,
     } as LinkDragData);
-
+    
     const [menuPosition, setMenuPosition] = useState<Vector2 | null>(null);
-
+    
     const viewportRef = useRef<HTMLDivElement>(null);
     const areaRef = useRef<HTMLDivElement>(null);
     const dragOrigin = useRef(Vector2.zero());
+    
+    const func = program.functions.get(selectedFunction);
+    if (func === undefined) {
+        return <></>;
+    }
 
     const gridSize = 32;
     const nodeDefaultWidth = 6;
@@ -162,7 +172,7 @@ export function GraphArea() {
         point.x = Math.round(point.x / gridSize) * gridSize;
         point.y = Math.round(point.y / gridSize) * gridSize;
     }
-    
+
     function screenPointToViewport(point: Vector2) {
         if (viewportRef.current === null) {
             return point.clone();
@@ -178,7 +188,7 @@ export function GraphArea() {
         return transformPoint(screenPointToViewport(point), func.position, func.scale);
     }
 
-    function onCreateNode(def: NodeDefinition) {
+    function onCreateNode(createNode: (x: number, y: number) => Node) {
         let p = Vector2.zero();
         if (menuPosition !== null && func !== undefined) {
             p = transformPoint(screenPointToViewport(menuPosition), func.position, func.scale);
@@ -186,13 +196,13 @@ export function GraphArea() {
         }
 
         const newProgram = { ...program };
-        addNode(newProgram, selectedFunction, createNode(def, p.x, p.y));
+        addNode(newProgram, selectedFunction, createNode(p.x, p.y));
         setProgram(newProgram);
 
         setMenuPosition(null);
     }
 
-    // Generate links and node from program
+    // Generate links and nodes from selected function
     const nodes: ReactNode[] = [];
     const links: ReactNode[] = [];
 
@@ -207,58 +217,111 @@ export function GraphArea() {
         if (srcNode === undefined || dstNode === undefined) {
             continue;
         }
-        const srcDef = findDefinition(srcNode);
-        if (srcDef === undefined) {
+        const srcDef = findDefinition(program, selectedFunction, srcNode);
+        const dstDef = findDefinition(program, selectedFunction, dstNode);
+        if(srcDef === undefined || dstDef === undefined) {
             continue;
         }
-        const dstDef = findDefinition(dstNode);
-        if (dstDef === undefined) {
-            continue;
+
+        let x1 = 0, y1 = 0, y2 = 0;
+        let type: PinVarType = "boolean";
+
+        switch(srcDef.type) {
+            case "constant":
+                x1 = (srcDef.widthOverride || nodeDefaultWidth) - 0.5;
+                y1 = 0.5;
+                type = srcDef.varType;
+                break;
+            case "variable":
+                x1 = nodeDefaultWidth - 0.5;
+                y1 = src.index + 0.5;
+                type = srcDef.varType;
+                break;
+            case "coreFunction":
+            case "userFunction":
+                x1 = (srcDef.widthOverride || nodeDefaultWidth) - 0.5;
+                y1 = src.index + 1.5;
+                type = srcDef.outputs[src.index][1];
+                break;
         }
-        const type = [...dstDef.inputs][dst.index][1];
-        const color = `var(--type-${type}-color)`;
-        const width = srcDef.widthOverride || nodeDefaultWidth;
+
+        switch(dstDef.type) {
+            case "variable":
+                y2 = dst.index + 0.5;
+                break;
+            case "coreFunction":
+            case "userFunction":
+                y2 = dstDef.outputs.length + dst.index + 1.5;
+                break;
+        }
+
         links.push(<GraphLink
             key={key}
-            x1={srcNode.x + gridSize * (width - 0.5)}
-            y1={srcNode.y + gridSize * (src.index + (srcNode.type === "constant" ? 0.5 : 1.5))}
+            x1={srcNode.x + gridSize * x1}
+            y1={srcNode.y + gridSize * y1}
             x2={dstNode.x + gridSize * 0.5}
-            y2={dstNode.y + gridSize * (dstDef.outputs.length + dst.index + 1.5)}
-            color={color}
+            y2={dstNode.y + gridSize * y2}
+            color={`var(--type-${type}-color)`}
         />);
         key++;
     }
 
     // Generate add node menu
-    const categorisedFuncs = new Map<string, ReactNode[]>();
-    const addToNodeMenu = (def: NodeDefinition) => {
-        let category = categorisedFuncs.get(def.category);
-        if (category === undefined) {
-            category = categorisedFuncs.set(def.category, []).get(def.category);
-        }
-        category?.push(
+    const addNodeToMenu = (menu: ReactNode[], name: string, icon: string | undefined, onClick: MouseEventHandler) => {
+        menu.push(
             <MenuItem
-                key={def.name}
-                label={camelCaseToWords(def.name)}
-                icon={getIcon(def.icon)}
-                onClick={() => onCreateNode(def)}
+                key={name}
+                label={camelCaseToWords(name)}
+                icon={getIcon(icon)}
+                onClick={onClick}
             />
         );
     };
+
+    // Constants
+    const constantMenuItems: ReactNode[] = [];
     for (const def of constantDefinitions.values()) {
-        addToNodeMenu(def);
+        addNodeToMenu(
+            constantMenuItems,
+            def.varType,
+            def.icon,
+            () => onCreateNode((x, y) => createConstantNode(def.varType, x, y))
+        );
     }
+    const constantsMenu = (
+        <MenuSub icon={<IconPlus/>} label="Add Constant">
+            {constantMenuItems}
+        </MenuSub>
+    );
     for (const def of controlFlowDefinitions.values()) {
         addToNodeMenu(def);
     }
     for (const def of operationDefinitions.values()) {
         addToNodeMenu(def);
+
+    // Core functions
+    const categorizedMenuItems = new Map<string, ReactNode[]>();
+    const addNodeToCategoryMenu = (name: string, category: string, icon: string | undefined, onClick: MouseEventHandler) => {
+        let menu = categorizedMenuItems.get(category);
+        if (menu === undefined) {
+            menu = categorizedMenuItems.set(category, []).get(category);
+        }
+        addNodeToMenu(menu!, name, icon, onClick);
+    };
+
+    for (const def of coreFunctionDefinitions.values()) {
+        addNodeToCategoryMenu(
+            def.name,
+            def.category || "default",
+            def.icon,
+            () => onCreateNode((x, y) => createCoreFunctionCallNode(def.name, x, y))
+        );
     }
 
-    const addNodeMenu: ReactNode[] = [];
-    for (const [category, nodes] of categorisedFuncs) {
+    const categorizedSubMenus: ReactNode[] = [];
+    for (const [category, nodes] of categorizedMenuItems) {
         const def = coreCategories.get(category) || { name: "default", icon: "default" };
-        addNodeMenu.push(
+        categorizedSubMenus.push(
             <MenuSub
                 key={category}
                 label={camelCaseToWords(category)}
@@ -269,6 +332,11 @@ export function GraphArea() {
         );
     }
 
+    const coreFunctionsMenu = (
+        <MenuSub label="Add Core Function" icon={<IconPlus />}>
+            {categorizedSubMenus}
+        </MenuSub>
+    );
 
     const halfGridSize = gridSize * func.scale * 0.5;
     const bgPos = func.position.clone().addScalar(halfGridSize);
@@ -321,9 +389,8 @@ export function GraphArea() {
                 >
                     <MenuItem label="Paste" icon={<IconClipboard />} />
                     <MenuDivider />
-                    <MenuSub label="Add Node" icon={<IconPlus />}>
-                        {addNodeMenu}
-                    </MenuSub>
+                    {constantsMenu}
+                    {coreFunctionsMenu}
                 </Menu>
             </div>
         </GraphContext.Provider>

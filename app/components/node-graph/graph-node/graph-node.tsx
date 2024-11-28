@@ -1,8 +1,8 @@
 import classes from "./graph-node.module.css";
 import { CSSProperties, ReactNode, useRef } from "react";
-import { Node, TypedPin, VariableType } from "@/app/lib/program/program-data";
+import { Node, TypedPin, PinVarType } from "@/app/lib/program/program-data";
 import { useProgram } from "../../app-provider/app-provider";
-import { findDefinition } from "@/app/lib/program/program-algorithm";
+import { findConstantDefinition, findCoreFunctionDefinition, findUserFunctionDefinition } from "@/app/lib/program/program-algorithm";
 import { GraphPin } from "./graph-pin";
 import { camelCaseToWords, getCategoryColor, getIcon } from "@/app/lib/program/program-util";
 import { Vector2 } from "@/app/lib/vector2";
@@ -80,44 +80,126 @@ export function GraphNode({ node }: GraphNodeProps) {
         window.removeEventListener("pointerup", onPointerUp);
     }
 
-    const definition = findDefinition(node);
-    if (definition === undefined) {
+    const func = program.functions.get(selectedFunction);
+    if (func === undefined) {
         return <></>;
     }
 
-    const f = program.functions.get(selectedFunction);
-    if (f === undefined) {
-        return <></>;
-    }
+    const isInputPinConnected =
+        (i: number) => func.links.find((link) => link.dst.nodeId === node.id && link.dst.index === i) !== undefined;
+    const isOutputPinConnected =
+        (i: number) => func.links.find((link) => link.src.nodeId === node.id && link.src.index === i) !== undefined;
 
+    let widthOverride: number | undefined;
     let contents: ReactNode;
-    const width = definition.widthOverride || nodeCellWidth;
+
     if (node.type === "constant") {
-        const connected = f.links.find((link) => link.src.nodeId === node.id) !== undefined;
+        const definition = findConstantDefinition(node.varType);
+        widthOverride = definition.widthOverride;
+        const width = widthOverride || nodeCellWidth;
+
         contents = (
             <div className={classes.body}>
                 <GraphConstant
                     value={node.value}
-                    connected={connected}
+                    connected={isOutputPinConnected(0)}
                     pin={{ nodeId: node.id, index: 0, type: "output" }}
-                    varType={typeof node.value as VariableType}
+                    varType={typeof node.value as PinVarType}
                     pinX={node.x + gridSize * (width - 0.5)}
                     pinY={node.y + gridSize * 0.5}
                 />
             </div>
         );
     }
-    else {
+    else if (node.type === "function") {
+        const definition = findUserFunctionDefinition(program, selectedFunction);
+        if (definition === undefined) {
+            return <></>;
+        }
+        widthOverride = definition.widthOverride;
+        const width = widthOverride || nodeCellWidth;
+        if (node.operation === "entry") {
+            const vars: ReactNode[] = [];
+            let i = 0;
+            for (const [varName, varType] of definition.inputs) {
+                vars.push(
+                    <GraphVar
+                        key={i}
+                        name={camelCaseToWords(varName)}
+                        connected={isOutputPinConnected(i)}
+                        pin={{ nodeId: node.id, index: i, type: "output" }}
+                        varType={varType}
+                        pinX={node.x + gridSize * (width - 0.5)}
+                        pinY={node.y + gridSize * (i + 1.5)}
+                    />
+                );
+                i++;
+            }
+            contents = (
+                <>
+                    <div
+                        className={classes.head}
+                        style={{ backgroundColor: getCategoryColor("function") }}
+                    >
+                        {getIcon(definition.icon)}
+                        <AutoScrollLabel>{camelCaseToWords(definition.name)}</AutoScrollLabel>
+                    </div>
+                    <div className={classes.body}>
+                        {vars}
+                    </div>
+                </>
+            );
+        }
+        else {
+            const vars: ReactNode[] = [];
+            let i = 0;
+            for (const [varName, varType] of definition.outputs) {
+                vars.push(
+                    <GraphVar
+                        key={i}
+                        name={camelCaseToWords(varName)}
+                        connected={isInputPinConnected(i)}
+                        pin={{ nodeId: node.id, index: i, type: "input" }}
+                        varType={varType}
+                        pinX={node.x + gridSize * 0.5}
+                        pinY={node.y + gridSize * (i + 1.5)}
+                    />
+                );
+                i++;
+            }
+            contents = (
+                <>
+                    <div
+                        className={classes.head}
+                        style={{ backgroundColor: getCategoryColor("function") }}
+                    >
+                        {getIcon("return")}
+                        <AutoScrollLabel>{camelCaseToWords("return")}</AutoScrollLabel>
+                    </div>
+                    <div className={classes.body}>
+                        {vars}
+                    </div>
+                </>
+            );
+        }
+    }
+    else if (node.type === "coreFunctionCall") {
+        const definition = findCoreFunctionDefinition(node.funcName);
+        if (definition === undefined) {
+            return <></>;
+        }
+        widthOverride = definition.widthOverride;
+        const width = widthOverride || nodeCellWidth;
+
         const vars: ReactNode[] = [];
         let key = 0;
         let i = 0;
         for (const [varName, varType] of definition.outputs) {
-            const connected = f.links.find((link) => link.src.nodeId === node.id && link.src.index === i) !== undefined;
             vars.push(
                 <GraphVar
                     key={key}
                     name={camelCaseToWords(varName)}
-                    connected={connected}
+                    connected={isOutputPinConnected(i)}
                     pin={{ nodeId: node.id, index: i, type: "output" }}
                     varType={varType}
                     pinX={node.x + gridSize * (width - 0.5)}
@@ -128,12 +210,11 @@ export function GraphNode({ node }: GraphNodeProps) {
         }
         i = 0;
         for (const [varName, varType] of definition.inputs) {
-            const connected = f.links.find((link) => link.dst.nodeId === node.id && link.dst.index === i) !== undefined;
             vars.push(
                 <GraphVar
                     key={key}
                     name={camelCaseToWords(varName)}
-                    connected={connected}
+                    connected={isInputPinConnected(i)}
                     pin={{ nodeId: node.id, index: i, type: "input" }}
                     varType={varType}
                     pinX={node.x + gridSize * 0.5}
@@ -163,8 +244,8 @@ export function GraphNode({ node }: GraphNodeProps) {
         top: node.y + 1,
     }
 
-    if (definition.widthOverride !== undefined) {
-        style["--node-cell-width"] = definition.widthOverride;
+    if (widthOverride !== undefined) {
+        style["--node-cell-width"] = widthOverride;
     }
 
     return (
@@ -183,7 +264,7 @@ type GraphVarProps = {
     name: string,
     connected?: boolean,
     pin: TypedPin,
-    varType: VariableType,
+    varType: PinVarType,
     pinX: number,
     pinY: number,
 }
@@ -212,7 +293,7 @@ type GraphConstantProps = {
     value: boolean | number | string,
     connected?: boolean,
     pin: TypedPin,
-    varType: VariableType,
+    varType: PinVarType,
     pinX: number,
     pinY: number,
 }
@@ -220,7 +301,7 @@ type GraphConstantProps = {
 function GraphConstant({ value, connected, pin, varType, pinX, pinY }: GraphConstantProps) {
     const input = (function () {
         switch (typeof value) {
-            case "boolean": return <Checkbox defaultChecked={value}/>;
+            case "boolean": return <Checkbox defaultChecked={value} />;
             case "number": return <NumberInput defaultValue={value} selectOnFocus />;
             case "string": return <TextInput defaultValue={value} selectOnFocus />;
             default: return <></>;

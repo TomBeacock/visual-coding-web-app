@@ -1,47 +1,44 @@
-import { Category, ControlFlow, NodeDefinition, Operation } from "./program-data";
+import { Category, ConstantDefinition, ConstantVarType, CoreFunctionDefinition } from "./program-data";
 
-const constantDef: Pick<NodeDefinition, "type" | "category" | "inputs"> = {
-    type: "constant",
-    category: "constant",
-    inputs: [],
-}
+const constantDefBase: Pick<ConstantDefinition, "type"> = { type: "constant" };
 
-export const constantDefinitions = new Map<"boolean" | "number" | "string", NodeDefinition>([
+export const constantDefinitions = new Map<ConstantVarType, ConstantDefinition>([
     ["boolean", {
-        ...constantDef,
-        name: "boolean",
+        ...constantDefBase,
+        varType: "boolean",
         icon: "boolean",
         widthOverride: 2,
-        outputs: [["", "boolean"]],
     }],
     ["number", {
-        ...constantDef,
-        name: "number",
+        ...constantDefBase,
+        varType: "number",
         icon: "number",
         widthOverride: 4,
-        outputs: [["", "number"]],
     }],
     ["string", {
-        ...constantDef,
-        name: "string",
+        ...constantDefBase,
+        varType: "string",
         icon: "string",
-        outputs: [["", "string"]],
     }]
 ]);
 
-const unaryDef: Pick<NodeDefinition, "widthOverride"> = {
+const coreFunctionDefBase: Pick<CoreFunctionDefinition, "type"> = {
+    type: "coreFunction",
+}
+
+const unaryDef: Pick<CoreFunctionDefinition, "widthOverride"> = {
     widthOverride: 4,
 }
 
-const binaryDef: Pick<NodeDefinition, "widthOverride"> = {
+const binaryDef: Pick<CoreFunctionDefinition, "widthOverride"> = {
     widthOverride: 4,
 }
 
-type BaseDef = Pick<NodeDefinition, "type" | "category" | "outputs">;
-type PartialDef = Pick<NodeDefinition, "type" | "category" | "inputs" | "outputs" | "widthOverride">;
+type BaseDef = Pick<CoreFunctionDefinition, "type" | "category" | "outputs">;
+type PartialDef = Pick<CoreFunctionDefinition, "type" | "category" | "inputs" | "outputs" | "widthOverride">;
 
 const arithmeticDefBase: BaseDef = {
-    type: "operation",
+    ...coreFunctionDefBase,
     category: "arithmetic",
     outputs: [["result", "number"]],
 }
@@ -59,15 +56,15 @@ const binaryArithmeticDef: PartialDef = {
 }
 
 const relationalDef: PartialDef = {
+    ...coreFunctionDefBase,
     ...binaryDef,
-    type: "operation",
     category: "relational",
     inputs: [["a", "number"], ["b", "number"]],
     outputs: [["result", "boolean"]],
 }
 
 const logicalDefBase: BaseDef = {
-    type: "operation",
+    ...coreFunctionDefBase,
     category: "logic",
     outputs: [["result", "boolean"]]
 }
@@ -85,7 +82,7 @@ const binaryLogicalDef: PartialDef = {
 }
 
 const bitwiseDefBase: BaseDef = {
-    type: "operation",
+    ...coreFunctionDefBase,
     category: "bitwise",
     outputs: [["result", "number"]]
 }
@@ -102,7 +99,27 @@ const binaryBitwiseDef: PartialDef = {
     inputs: [["a", "number"], ["b", "number"]],
 }
 
-export const operationDefinitions = new Map<Operation, NodeDefinition>([
+const controlFlowDef: Pick<CoreFunctionDefinition, "type" | "category" | "widthOverride"> = {
+    ...coreFunctionDefBase,
+    category: "controlFlow",
+    widthOverride: 5,
+}
+
+export const coreFunctionDefinitions = new Map<string, CoreFunctionDefinition>([
+    ["if", {
+        ...controlFlowDef,
+        name: "if",
+        icon: "branch",
+        inputs: [["", "exec"], ["condition", "boolean"]],
+        outputs: [["true", "exec"], ["false", "exec"]],
+    }],
+    ["while", {
+        ...controlFlowDef,
+        name: "while",
+        icon: "loop",
+        inputs: [["", "exec"], ["condition", "boolean"]],
+        outputs: [["completed", "exec"], ["body", "exec"]],
+    }],
     ["add", { ...binaryArithmeticDef, name: "add", icon: "plus" }],
     ["subtract", { ...binaryArithmeticDef, name: "subtract", icon: "minus" }],
     ["multiply", { ...binaryArithmeticDef, name: "multiply", icon: "cross" }],
@@ -126,29 +143,6 @@ export const operationDefinitions = new Map<Operation, NodeDefinition>([
     ["xor", { ...binaryBitwiseDef, name: "xor", icon: "xor" }],
     ["leftShift", { ...binaryBitwiseDef, name: "leftShift", icon: "leftShift" }],
     ["rightShift", { ...binaryBitwiseDef, name: "rightShift", icon: "rightShift" }],
-]);
-
-const controlFlowDef: Pick<NodeDefinition, "type" | "category" | "widthOverride"> = {
-    type: "controlFlow",
-    category: "controlFlow",
-    widthOverride: 5,
-}
-
-export const controlFlowDefinitions = new Map<ControlFlow, NodeDefinition>([
-    ["if", {
-        ...controlFlowDef,
-        name: "if",
-        icon: "branch",
-        inputs: [["", "exec"], ["condition", "boolean"]],
-        outputs: [["true", "exec"], ["false", "exec"]],
-    }],
-    ["while", {
-        ...controlFlowDef,
-        name: "while",
-        icon: "loop",
-        inputs: [["", "exec"], ["condition", "boolean"]],
-        outputs: [["completed", "exec"], ["body", "exec"]],
-    }]
 ]);
 
 export const coreCategories = new Map<string, Category>([
