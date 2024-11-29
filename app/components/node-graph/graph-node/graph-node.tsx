@@ -174,6 +174,69 @@ export function GraphNode({ node }: GraphNodeProps) {
             );
         }
     }
+    else if (node.type === "variable") {
+        const definition = findVariableDefinition(program, selectedFunction, node.varName);
+        if (definition === undefined) {
+            return <></>;
+        }
+        if (node.operation === "get") {
+            contents = (
+                <>
+                    <div className={classes.body}>
+                        <GraphVar
+                            name={definition.name}
+                            connected={isOutputPinConnected(0)}
+                            pin={{ nodeId: node.id, index: 0, type: "output" }}
+                            varType={definition.varType}
+                        />
+                    </div>
+                </>
+            );
+        }
+        else {
+            contents = (
+                <>
+                    <div
+                        className={classes.head}
+                        style={{ backgroundColor: getCategoryColor() }}
+                    >
+                        {getIcon()}
+                        <span>{"Set"}</span>
+                    </div>
+                    <div className={classes.body}>
+                        <GraphDoubleVar
+                            input={{
+                                name: "",
+                                connected: isInputPinConnected(0),
+                                pin: { nodeId: node.id, index: 0, type: "input" },
+                                varType: "exec",
+                            }}
+                            output={{
+                                name: "",
+                                connected: isOutputPinConnected(0),
+                                pin: { nodeId: node.id, index: 0, type: "output" },
+                                varType: "exec",
+                            }}
+                        />
+                        <GraphDoubleVar
+                            input={{
+                                name: camelCaseToWords(definition.name),
+                                connected: isInputPinConnected(1),
+                                pin: { nodeId: node.id, index: 1, type: "input" },
+                                varType: definition.varType,
+                            }}
+                            output={{
+                                name: "",
+                                connected: isOutputPinConnected(1),
+                                pin: { nodeId: node.id, index: 1, type: "output" },
+                                varType: definition.varType,
+                            }}
+                        />
+                    </div>
+                </>
+            );
+        }
+    }
     else if (node.type === "coreFunctionCall") {
         const definition = findCoreFunctionDefinition(node.funcName);
         if (definition === undefined) {

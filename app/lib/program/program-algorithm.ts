@@ -12,6 +12,7 @@ import {
     ConstantVarType,
     UserFunctionDefinition,
     VariableDefinition,
+    VariableNodeOperation,
 } from "./program-data";
 import { constantDefinitions, coreFunctionDefinitions } from "./program-core";
 import { Vector2 } from "../vector2";
@@ -78,6 +79,10 @@ export function createConstantNode(type: ConstantVarType, x: number, y: number):
     }
 }
 
+export function createVariableNode(varName: string, operation: VariableNodeOperation, x: number, y: number): Node {
+    return { id: uuid(), x, y, type: "variable", operation, varName };
+}
+
 export function createCoreFunctionCallNode(funcName: string, x: number, y: number): Node {
     return { id: uuid(), x, y, type: "coreFunctionCall", funcName };
 }
@@ -110,6 +115,23 @@ export function removePinLinks(program: Program, functionName: string, pin: Type
                 f.links.splice(i, 1);
             }
         }
+    }
+}
+
+export function addVariable(program: Program, functionName: string, varName: string) {
+    const f = program.functions.get(functionName);
+    if (f !== undefined) {
+        while (f.variables.has(varName)) {
+            varName += "Copy";
+        }
+        f.variables.set(varName, { type: "variable", name: varName, varType: "boolean" });
+    }
+}
+
+export function deleteVariable(program: Program, functionName: string, varName: string) {
+    const f = program.functions.get(functionName);
+    if (f !== undefined) {
+        f.variables.delete(varName);
     }
 }
 

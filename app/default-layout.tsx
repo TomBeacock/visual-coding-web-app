@@ -8,6 +8,7 @@ import {
   IconTerminal,
   IconVariable
 } from "@tabler/icons-react";
+import { SectionVariables } from "./components/sections/section-variables";
 
 const tabIconProps = {
   stroke: 1.5,
@@ -42,6 +43,16 @@ export const defaultLayout = {
               }
             ]
           },
+          {
+            type: "panel",
+            children: [
+              {
+                icon: <IconVariable {...tabIconProps} />,
+                label: "Local Variables",
+                content: <SectionVariables />,
+              }
+            ]
+          },
         ]
       },
       {
@@ -73,31 +84,15 @@ export const defaultLayout = {
         ]
       },
       {
-        type: "box",
-        direction: "column",
+        type: "panel",
         children: [
           {
-            type: "panel",
-            children: [
-              {
-                icon: <IconVariable {...tabIconProps} />,
-                label: "Local Variables",
-                content: <span>Local variables here</span>,
-              }
-            ]
-          },
-          {
-            type: "panel",
-            children: [
-              {
-                icon: <IconListDetails {...tabIconProps} />,
-                label: "Details",
-                content: <span>Details here</span>,
-              }
-            ]
-          },
+            icon: <IconListDetails {...tabIconProps} />,
+            label: "Details",
+            content: <span>Details here</span>,
+          }
         ]
-      }
+      },
     ]
   },
 } as DockLayoutData;

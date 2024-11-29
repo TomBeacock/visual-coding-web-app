@@ -21,6 +21,7 @@ import { GraphLinkIndicator, GraphLinkIndicatorProps } from "./graph-link/graph-
 import { Menu, MenuDivider, MenuItem, MenuSub } from "../menu/menu";
 import {
     IconClipboard,
+    IconCodeVariablePlus,
     IconPlus,
     IconVariablePlus,
 } from "@tabler/icons-react";
@@ -274,6 +275,21 @@ export function GraphArea() {
         </MenuSub>
     );
 
+    // Variables
+    const variableMenuItems: ReactNode[] = [];
+    for (const [, def] of func.variables) {
+        variableMenuItems.push(
+            <MenuSub key={def.name} icon={getIcon(def.varType)} label={def.name}>
+                <MenuItem label="Get" onClick={() => onCreateNode((x, y) => createVariableNode(def.name, "get", x, y))} />
+                <MenuItem label="Set" onClick={() => onCreateNode((x, y) => createVariableNode(def.name, "set", x, y))} />
+            </MenuSub>
+        );
+    }
+    const variablesMenu = variableMenuItems.length > 0 ? (
+        <MenuSub icon={<IconCodeVariablePlus />} label="Add Variable">
+            {variableMenuItems}
+        </MenuSub>
+    ) : undefined;
 
     // Core functions
     const categorizedMenuItems = new Map<string, ReactNode[]>();
@@ -371,6 +387,7 @@ export function GraphArea() {
                     <MenuItem label="Paste" icon={<IconClipboard />} />
                     <MenuDivider />
                     {constantsMenu}
+                    {variablesMenu}
                     {coreFunctionsMenu}
                 </Menu>
             </div>
