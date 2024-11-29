@@ -2,11 +2,11 @@
     --node-bg: var(--body-bg);
 
     position: absolute;
-    width: calc(var(--node-cell-width) * var(--grid-size) - 2px);
     border-radius: 0.25rem;
     display: flex;
     flex-direction: column;
     user-select: none;
+    text-wrap: nowrap;
     overflow: hidden;
     font-size: 0.875em;
     background-color: rgb(from var(--node-bg) r g b / 85%);
@@ -30,13 +30,14 @@
 .body {
     display: flex;
     flex-direction: column;
-    margin: -1px;
+    margin-block: -1px;
 }
 
 .row {
     height: var(--grid-size);
     display: grid;
     align-items: center;
+
 }
 
 .input {
@@ -48,6 +49,19 @@
     grid-template-columns: 1fr var(--grid-size);
     padding-left: calc(0.25rem + 1.5px);
     text-align: right;
+}
+
+.double {
+    grid-template-columns: var(--grid-size) 1fr 0.5rem auto var(--grid-size);
+
+    &>:nth-last-child(2) {
+        grid-column: 4;
+        text-align: right;
+    }
+
+    &>:nth-last-child(1) {
+        grid-column: 5;
+    }
 }
 
 .constant {

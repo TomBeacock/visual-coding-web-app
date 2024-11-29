@@ -1,22 +1,17 @@
+"use client"
+
 import classes from "./graph-node.module.css";
-import { CSSProperties, ReactNode, useRef } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import { Node, TypedPin, PinVarType } from "@/app/lib/program/program-data";
 import { useProgram } from "../../app-provider/app-provider";
-import { findConstantDefinition, findCoreFunctionDefinition, findUserFunctionDefinition } from "@/app/lib/program/program-algorithm";
+import { findCoreFunctionDefinition, findUserFunctionDefinition, findVariableDefinition } from "@/app/lib/program/program-algorithm";
 import { GraphPin } from "./graph-pin";
 import { camelCaseToWords, getCategoryColor, getIcon } from "@/app/lib/program/program-util";
 import { Vector2 } from "@/app/lib/vector2";
 import { useGraph } from "../graph-area";
-import { AutoScrollLabel } from "../../auto-scroll-label/auto-scroll-label";
 import Checkbox from "../../checkbox/checkbox";
 import TextInput from "../../text-input/text-input";
 import NumberInput from "../../number-input/number-input";
-
-declare module "react" {
-    interface CSSProperties {
-        "--node-cell-width"?: number;
-    }
-}
 
 type GraphNodeProps = {
     node: Node,
@@ -24,10 +19,18 @@ type GraphNodeProps = {
 
 export function GraphNode({ node }: GraphNodeProps) {
     const { program, setProgram, selectedFunction } = useProgram();
-    const { gridSize, nodeCellWidth, snapPointToGrid, transformScreenPointToGraph } = useGraph();
+    const { gridSize, snapPointToGrid, transformScreenPointToGraph } = useGraph();
 
     const ref = useRef<HTMLDivElement>(null);
     const dragOffset = useRef(Vector2.zero());
+
+    useEffect(() => {
+        if (ref.current === null) {
+            return;
+        }
+        const width = Math.ceil(ref.current.clientWidth / gridSize) * gridSize;
+        ref.current.style.width = `${width - 2}px`;
+    });
 
     function onPointerDown(event: React.PointerEvent) {
         if (dragOffset.current === null ||
@@ -90,14 +93,9 @@ export function GraphNode({ node }: GraphNodeProps) {
     const isOutputPinConnected =
         (i: number) => func.links.find((link) => link.src.nodeId === node.id && link.src.index === i) !== undefined;
 
-    let widthOverride: number | undefined;
     let contents: ReactNode;
 
     if (node.type === "constant") {
-        const definition = findConstantDefinition(node.varType);
-        widthOverride = definition.widthOverride;
-        const width = widthOverride || nodeCellWidth;
-
         contents = (
             <div className={classes.body}>
                 <GraphConstant
@@ -105,8 +103,6 @@ export function GraphNode({ node }: GraphNodeProps) {
                     connected={isOutputPinConnected(0)}
                     pin={{ nodeId: node.id, index: 0, type: "output" }}
                     varType={typeof node.value as PinVarType}
-                    pinX={node.x + gridSize * (width - 0.5)}
-                    pinY={node.y + gridSize * 0.5}
                 />
             </div>
         );
@@ -116,8 +112,7 @@ export function GraphNode({ node }: GraphNodeProps) {
         if (definition === undefined) {
             return <></>;
         }
-        widthOverride = definition.widthOverride;
-        const width = widthOverride || nodeCellWidth;
+
         if (node.operation === "entry") {
             const vars: ReactNode[] = [];
             let i = 0;
@@ -129,8 +124,6 @@ export function GraphNode({ node }: GraphNodeProps) {
                         connected={isOutputPinConnected(i)}
                         pin={{ nodeId: node.id, index: i, type: "output" }}
                         varType={varType}
-                        pinX={node.x + gridSize * (width - 0.5)}
-                        pinY={node.y + gridSize * (i + 1.5)}
                     />
                 );
                 i++;
@@ -142,7 +135,7 @@ export function GraphNode({ node }: GraphNodeProps) {
                         style={{ backgroundColor: getCategoryColor("function") }}
                     >
                         {getIcon(definition.icon)}
-                        <AutoScrollLabel>{camelCaseToWords(definition.name)}</AutoScrollLabel>
+                        <span>{camelCaseToWords(definition.name)}</span>
                     </div>
                     <div className={classes.body}>
                         {vars}
@@ -161,8 +154,6 @@ export function GraphNode({ node }: GraphNodeProps) {
                         connected={isInputPinConnected(i)}
                         pin={{ nodeId: node.id, index: i, type: "input" }}
                         varType={varType}
-                        pinX={node.x + gridSize * 0.5}
-                        pinY={node.y + gridSize * (i + 1.5)}
                     />
                 );
                 i++;
@@ -174,7 +165,7 @@ export function GraphNode({ node }: GraphNodeProps) {
                         style={{ backgroundColor: getCategoryColor("function") }}
                     >
                         {getIcon("return")}
-                        <AutoScrollLabel>{camelCaseToWords("return")}</AutoScrollLabel>
+                        <span>{camelCaseToWords("return")}</span>
                     </div>
                     <div className={classes.body}>
                         {vars}
@@ -188,40 +179,54 @@ export function GraphNode({ node }: GraphNodeProps) {
         if (definition === undefined) {
             return <></>;
         }
-        widthOverride = definition.widthOverride;
-        const width = widthOverride || nodeCellWidth;
-
         const vars: ReactNode[] = [];
-        let key = 0;
-        let i = 0;
-        for (const [varName, varType] of definition.outputs) {
-            vars.push(
-                <GraphVar
-                    key={key}
-                    name={camelCaseToWords(varName)}
-                    connected={isOutputPinConnected(i)}
-                    pin={{ nodeId: node.id, index: i, type: "output" }}
-                    varType={varType}
-                    pinX={node.x + gridSize * (width - 0.5)}
-                    pinY={node.y + gridSize * (key + 1.5)}
-                />);
-            key++;
-            i++;
-        }
-        i = 0;
-        for (const [varName, varType] of definition.inputs) {
-            vars.push(
-                <GraphVar
-                    key={key}
-                    name={camelCaseToWords(varName)}
-                    connected={isInputPinConnected(i)}
-                    pin={{ nodeId: node.id, index: i, type: "input" }}
-                    varType={varType}
-                    pinX={node.x + gridSize * 0.5}
-                    pinY={node.y + gridSize * (key + 1.5)}
-                />);
-            key++;
-            i++;
+        const length = Math.max(definition.inputs.length, definition.outputs.length);
+        for (let i = 0; i < length; i++) {
+            if (i < definition.inputs.length && i < definition.outputs.length) {
+                const [inputName, inputType] = definition.inputs[i];
+                const [outputName, outputType] = definition.outputs[i];
+                vars.push(
+                    <GraphDoubleVar
+                        key={i}
+                        input={{
+                            name: camelCaseToWords(inputName),
+                            connected: isInputPinConnected(i),
+                            pin: { nodeId: node.id, index: i, type: "input" },
+                            varType: inputType,
+                        }}
+                        output={{
+                            name: camelCaseToWords(outputName),
+                            connected: isOutputPinConnected(i),
+                            pin: { nodeId: node.id, index: i, type: "output" },
+                            varType: outputType,
+                        }}
+                    />
+                );
+            }
+            else if (i < definition.inputs.length) {
+                const [inputName, inputType] = definition.inputs[i];
+                vars.push(
+                    <GraphVar
+                        key={i}
+                        name={camelCaseToWords(inputName)}
+                        connected={isInputPinConnected(i)}
+                        pin={{ nodeId: node.id, index: i, type: "input" }}
+                        varType={inputType}
+                    />
+                );
+            }
+            else {
+                const [outputName, outputType] = definition.outputs[i];
+                vars.push(
+                    <GraphVar
+                        key={i}
+                        name={camelCaseToWords(outputName)}
+                        connected={isOutputPinConnected(i)}
+                        pin={{ nodeId: node.id, index: i, type: "output" }}
+                        varType={outputType}
+                    />
+                );
+            }
         }
         contents = (
             <>
@@ -230,7 +235,7 @@ export function GraphNode({ node }: GraphNodeProps) {
                     style={{ backgroundColor: getCategoryColor(definition.category) }}
                 >
                     {getIcon(definition.icon)}
-                    <AutoScrollLabel>{camelCaseToWords(definition.name)}</AutoScrollLabel>
+                    <span>{camelCaseToWords(definition.name)}</span>
                 </div>
                 <div className={classes.body}>
                     {vars}
@@ -239,20 +244,11 @@ export function GraphNode({ node }: GraphNodeProps) {
         );
     }
 
-    const style: CSSProperties = {
-        left: node.x + 1,
-        top: node.y + 1,
-    }
-
-    if (widthOverride !== undefined) {
-        style["--node-cell-width"] = widthOverride;
-    }
-
     return (
         <div
             ref={ref}
             className={classes.node}
-            style={style}
+            style={{ left: node.x + 1, top: node.y + 1 }}
             onPointerDown={onPointerDown}
         >
             {contents}
@@ -265,26 +261,44 @@ type GraphVarProps = {
     connected?: boolean,
     pin: TypedPin,
     varType: PinVarType,
-    pinX: number,
-    pinY: number,
 }
 
-function GraphVar({ name, connected, pin, varType, pinX, pinY }: GraphVarProps) {
+function GraphVar({ name, connected, pin, varType }: GraphVarProps) {
     const graphPin = (
         <GraphPin
             connected={connected}
             pin={pin}
             varType={varType}
-            x={pinX} y={pinY}
         />
     );
-    const label = <AutoScrollLabel>{name}</AutoScrollLabel>;
+    const label = <span>{name}</span>;
     return (
-        <div
-            className={`${classes.row} ${pin.type === "input" ? classes.input : classes.output}`}
-            data-connected={connected}
-        >
+        <div className={`${classes.row} ${pin.type === "input" ? classes.input : classes.output}`}>
             {pin.type === "input" ? <>{graphPin}{label}</> : <>{label}{graphPin}</>}
+        </div>
+    );
+}
+
+type GraphDoubleVarProps = {
+    input: GraphVarProps,
+    output: GraphVarProps,
+}
+
+function GraphDoubleVar({ input, output }: GraphDoubleVarProps) {
+    return (
+        <div className={`${classes.row} ${classes.double}`}>
+            <GraphPin
+                connected={input.connected}
+                pin={input.pin}
+                varType={input.varType}
+            />
+            <span>{input.name}</span>
+            <span>{output.name}</span>
+            <GraphPin
+                connected={output.connected}
+                pin={output.pin}
+                varType={output.varType}
+            />
         </div>
     );
 }
@@ -294,11 +308,9 @@ type GraphConstantProps = {
     connected?: boolean,
     pin: TypedPin,
     varType: PinVarType,
-    pinX: number,
-    pinY: number,
 }
 
-function GraphConstant({ value, connected, pin, varType, pinX, pinY }: GraphConstantProps) {
+function GraphConstant({ value, connected, pin, varType }: GraphConstantProps) {
     const input = (function () {
         switch (typeof value) {
             case "boolean": return <Checkbox defaultChecked={value} />;
@@ -317,7 +329,6 @@ function GraphConstant({ value, connected, pin, varType, pinX, pinY }: GraphCons
                 connected={connected}
                 pin={pin}
                 varType={varType}
-                x={pinX} y={pinY}
             />
         </div>
     );

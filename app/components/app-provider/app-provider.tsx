@@ -1,7 +1,7 @@
 import { createContext, Dispatch, PropsWithChildren, SetStateAction, useContext, useState } from "react";
 import { Program } from "@/app/lib/program/program-data";
 import { Playback } from "@/app/lib/playback";
-import { createProgram } from "@/app/lib/program/program-algorithm";
+import { defaultProgram } from "@/app/lib/program/program-algorithm";
 
 type ProgramContextType = {
     program: Program,
@@ -19,7 +19,7 @@ const ProgramContext = createContext({} as ProgramContextType);
 const PlaybackContext = createContext({} as PlaybackContextType);
 
 export function AppProvider({ children }: PropsWithChildren) {
-    const [program, setProgram] = useState(createProgram());
+    const [program, setProgram] = useState(defaultProgram);
     const [selectedFunction, setSelectedFunction] = useState("main");
     const [playback, setPlayback] = useState({ playing: false, paused: false } as Playback);
 

@@ -1,4 +1,17 @@
 .base {
+    --type-exec-color: light-dark(var(--neutral-600), var(--neutral-300));
+    --type-boolean-color: light-dark(var(--rose-500), var(--red-500));
+    --type-number-color: light-dark(var(--emerald-500), var(--emerald-600));
+    --type-string-color: light-dark(var(--amber-500), var(--amber-500));
+
+    --category-default-color: light-dark(var(--sky-500), var(--sky-600));
+    --category-function-color: light-dark(var(--purple-600), var(--purple-600));
+    --category-control-flow-color: light-dark(var(--neutral-500), var(--neutral-500));
+    --category-arithmetic-color: light-dark(var(--emerald-500), var(--emerald-600));
+    --category-relational-color: light-dark(var(--rose-500), var(--red-500));
+    --category-logic-color: light-dark(var(--rose-500), var(--red-500));
+    --category-bitwise-color: light-dark(var(--emerald-500), var(--emerald-600));
+
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     height: 100vh;

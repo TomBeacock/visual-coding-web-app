@@ -20,6 +20,8 @@ export function pinEqual(a: TypedPin, b: TypedPin) {
     return a.nodeId === b.nodeId && a.index === b.index && a.type === b.type;
 }
 
+export const defaultProgram = createProgram();
+
 export function createProgram(): Program {
     const program: Program = { functions: new Map() };
     addFunction(program, "main");

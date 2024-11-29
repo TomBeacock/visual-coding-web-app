@@ -1,12 +1,11 @@
-import classes from "./graph-link.module.css";
+"use client"
 
-export type GraphLinkProps = {
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-    color: string,
-}
+import { Vector2 } from "@/app/lib/vector2";
+import classes from "./graph-link.module.css";
+import { TypedPin } from "@/app/lib/program/program-data";
+import { useEffect, useRef } from "react";
+import { useGraph } from "../graph-area";
+import { useProgram } from "../../app-provider/app-provider";
 
 function calculatePath(
     x1: number, y1: number,
@@ -73,11 +72,73 @@ function calculatePath(
     };
 }
 
-export function GraphLink({ x1, y1, x2, y2, color }: GraphLinkProps) {
-    const pathData = calculatePath(x1, y1, x2, y2, 8, 32, 4);
+export type GraphLinkProps = {
+    start: TypedPin | Vector2,
+    end: TypedPin | Vector2,
+    color: string,
+}
+
+export function GraphLink({ start, end, color }: GraphLinkProps) {
+    const ref = useRef<SVGSVGElement>(null);
+    const { program } = useProgram();
+    const { transformScreenPointToGraph } = useGraph();
+
+    useEffect(() => {
+        if (ref.current === null) {
+            return;
+        }
+
+        let startPoint: Vector2;
+        if (start instanceof Vector2) {
+            startPoint = start;
+        }
+        else {
+            const pin = document.getElementById(`${start.nodeId}-${start.type}-${start.index}`);
+            if (pin === null) {
+                console.error(`Failed to find start pin: ${start.nodeId}-${start.type}-${start.index}`);
+                startPoint = Vector2.zero();
+            }
+            else {
+                const rect = pin.getBoundingClientRect();
+                const screenPos = new Vector2(rect.x + rect.width / 2, rect.y + rect.height / 2);
+                startPoint = transformScreenPointToGraph(screenPos);
+            }
+        }
+        let endPoint: Vector2;
+        if (end instanceof Vector2) {
+            endPoint = end;
+        }
+        else {
+            const pin = document.getElementById(`${end.nodeId}-${end.type}-${end.index}`);
+            if (pin === null) {
+                console.error(`Failed to find end pin: ${end.nodeId}-${end.type}-${end.index}`);
+                endPoint = Vector2.zero();
+            }
+            else {
+                const rect = pin.getBoundingClientRect();
+                const screenPos = new Vector2(rect.x + rect.width / 2, rect.y + rect.height / 2);
+                endPoint = transformScreenPointToGraph(screenPos);
+            }
+        }
+        const data = calculatePath(startPoint.x, startPoint.y, endPoint.x, endPoint.y, 8, 32, 4);
+
+        const svg = ref.current;
+        svg.setAttribute("width", `${data.width}px`);
+        svg.setAttribute("height", `${data.height}px`);
+        svg.style.left = `${data.x}px`;
+        svg.style.top = `${data.y}px`;
+        svg.children[0].setAttribute("d", data.path);
+    }, [start, end, transformScreenPointToGraph, program]);
+
+    let pathData = { x: 0, y: 0, width: 0, height: 0, path: "" };
+
+    if (start instanceof Vector2 && end instanceof Vector2) {
+        pathData = calculatePath(start.x, start.y, end.x, end.y, 8, 32, 4);
+    }
 
     return (
         <svg
+            ref={ref}
             className={classes.link}
             xmlns="http://www.w3.org/2000/svg"
             width={pathData.width}

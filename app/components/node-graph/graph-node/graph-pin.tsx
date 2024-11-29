@@ -1,5 +1,7 @@
+"use client"
+
 import classes from "./graph-node.module.css";
-import { useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { IconCircle, IconPlayerPlay } from "@tabler/icons-react";
 import { Vector2 } from "@/app/lib/vector2";
 import { PinVarType, TypedPin } from "@/app/lib/program/program-data";
@@ -13,11 +15,9 @@ type GraphPinProps = {
     connected?: boolean;
     pin: TypedPin,
     varType: PinVarType,
-    x: number,
-    y: number,
 }
 
-export function GraphPin({ connected, pin, varType, x, y }: GraphPinProps) {
+export function GraphPin({ connected, pin, varType }: GraphPinProps) {
     const { program, setProgram, selectedFunction } = useProgram();
     const { linkIndicatorProps, setLinkIndicatorProps, linkDragData, transformScreenPointToGraph } = useGraph();
 
@@ -25,16 +25,12 @@ export function GraphPin({ connected, pin, varType, x, y }: GraphPinProps) {
 
     const color = getVariableTypeColor(varType);
 
-    function isValidConnection() {
-        if (linkDragData.current === null) {
-            return false;
+    useLayoutEffect(() => {
+        if (ref.current === null) {
+            return;
         }
-        const dragData = linkDragData.current;
-        return varType === dragData.varType &&
-            dragData.pin !== undefined &&
-            pin.nodeId !== dragData.pin.nodeId &&
-            pin.type !== dragData.pin.type;
-    }
+        ref.current.id = `${pin.nodeId}-${pin.type}-${pin.index}`;
+    });
 
     function onPointerDown(event: React.PointerEvent) {
         if (linkDragData.current === null ||
@@ -57,9 +53,10 @@ export function GraphPin({ connected, pin, varType, x, y }: GraphPinProps) {
 
             ref.current.classList.add(classes.connecting);
 
+            const center = getPinCenter();
+
             const dragData = linkDragData.current;
-            dragData.origin.x = x;
-            dragData.origin.y = y;
+            dragData.origin = center;
             dragData.varType = varType;
             dragData.isDragging = true;
             dragData.pin = pin;
@@ -67,9 +64,9 @@ export function GraphPin({ connected, pin, varType, x, y }: GraphPinProps) {
             const newLinkIndicatorProps = {
                 visible: true,
                 link: {
-                    x1: x, y1: y,
-                    x2: x, y2: y,
-                    color: color,
+                    start: center,
+                    end: center,
+                    color,
                 }
             } as GraphLinkIndicatorProps;
             setLinkIndicatorProps(newLinkIndicatorProps);
@@ -131,17 +128,17 @@ export function GraphPin({ connected, pin, varType, x, y }: GraphPinProps) {
 
         ref.current.classList.add(classes.connecting);
 
+        const center = getPinCenter();
+
         const dragData = linkDragData.current;
         dragData.isSnapping = true;
 
         const newLinkIndicatorProps = {
             visible: true,
             link: {
-                x1: pin.type === "output" ? x : dragData.origin.x,
-                y1: pin.type === "output" ? y : dragData.origin.y,
-                x2: pin.type === "output" ? dragData.origin.x : x,
-                y2: pin.type === "output" ? dragData.origin.y : y,
-                color: color,
+                start: pin.type === "input" ? dragData.origin : center,
+                end: pin.type === "input" ? center : dragData.origin,
+                color,
             }
         } as GraphLinkIndicatorProps;
         setLinkIndicatorProps(newLinkIndicatorProps);
@@ -173,16 +170,16 @@ export function GraphPin({ connected, pin, varType, x, y }: GraphPinProps) {
             return;
         }
 
-        const pos = transformScreenPointToGraph(new Vector2(event.clientX, event.clientY));
+        const pointerPos = transformScreenPointToGraph(new Vector2(event.clientX, event.clientY));
+
+        const dragData = linkDragData.current;
 
         const newLinkIndicatorProps = {
             visible: true,
             link: {
-                x1: pin.type === "output" ? x : pos.x,
-                y1: pin.type === "output" ? y : pos.y,
-                x2: pin.type === "output" ? pos.x : x,
-                y2: pin.type === "output" ? pos.y : y,
-                color: color,
+                start: pin.type === "output" ? dragData.origin : pointerPos,
+                end: pin.type === "output" ? pointerPos : dragData.origin,
+                color,
             }
         } as GraphLinkIndicatorProps;
         setLinkIndicatorProps(newLinkIndicatorProps);
@@ -210,6 +207,36 @@ export function GraphPin({ connected, pin, varType, x, y }: GraphPinProps) {
             visible: false,
         } as GraphLinkIndicatorProps;
         setLinkIndicatorProps(newLinkIndicatorProps);
+    }
+
+    function isValidConnection() {
+        if (linkDragData.current === null) {
+            return false;
+        }
+        const dragData = linkDragData.current;
+
+        const typesEqual = varType === dragData.varType;
+        
+        const pinTypeCorrect =
+            dragData.pin !== undefined &&
+            pin.nodeId !== dragData.pin.nodeId &&
+            pin.type !== dragData.pin.type;
+
+        const connectionAvailable =
+            !connected ||
+            (varType === "exec" && pin.type === "input") || // One-to-many
+            (varType !== "exec" && pin.type === "output") // Many-to-one
+
+        return typesEqual && pinTypeCorrect && connectionAvailable;
+    }
+
+    function getPinCenter() {
+        if (ref.current === null) {
+            return Vector2.zero();
+        }
+        const rect = ref.current.getBoundingClientRect();
+        const screenPos = new Vector2(rect.x + rect.width / 2, rect.y + rect.height / 2);
+        return transformScreenPointToGraph(screenPos);
     }
 
     const iconProps = {

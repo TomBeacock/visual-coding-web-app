@@ -1,7 +1,9 @@
+"use client"
+
 import classes from "./graph-area.module.css"
 import {
     useContext,
-    useRef, 
+    useRef,
     useState,
     createContext,
     ReactNode,
@@ -20,6 +22,7 @@ import { Menu, MenuDivider, MenuItem, MenuSub } from "../menu/menu";
 import {
     IconClipboard,
     IconPlus,
+    IconVariablePlus,
 } from "@tabler/icons-react";
 import { Node, TypedPin, PinVarType } from "@/app/lib/program/program-data";
 import {
@@ -27,7 +30,7 @@ import {
     coreFunctionDefinitions,
     coreCategories
 } from "@/app/lib/program/program-core";
-import { addNode, createConstantNode, createCoreFunctionCallNode, findDefinition } from "@/app/lib/program/program-algorithm";
+import { addNode, createConstantNode, createCoreFunctionCallNode, createFunctionNode, createVariableNode, findDefinition } from "@/app/lib/program/program-algorithm";
 import { camelCaseToWords, getIcon } from "@/app/lib/program/program-util";
 import { transformPoint } from "@/app/lib/transformations";
 
@@ -35,7 +38,6 @@ declare module "react" {
     interface CSSProperties {
         "--grid-size"?: string;
         "--grid-scale"?: number;
-        "--node-cell-width"?: number;
     }
 }
 
@@ -52,7 +54,6 @@ type GraphContextType = {
     setLinkIndicatorProps: Dispatch<SetStateAction<GraphLinkIndicatorProps>>,
     linkDragData: MutableRefObject<LinkDragData>,
     gridSize: number,
-    nodeCellWidth: number,
     snapPointToGrid: (point: Vector2) => void,
     transformScreenPointToGraph: (point: Vector2) => Vector2,
 }
@@ -63,32 +64,31 @@ export const useGraph = () => useContext(GraphContext);
 
 export function GraphArea() {
     const { program, setProgram, selectedFunction } = useProgram();
-    
+
     const [linkIndicatorProps, setLinkIndicatorProps] = useState({
         visible: false,
-        link: { x1: 0, y1: 0, x2: 0, y2: 0, color: "" },
+        link: { start: Vector2.zero(), end: Vector2.zero(), color: "" },
     } as GraphLinkIndicatorProps);
-    
+
     const linkDragData = useRef({
         origin: Vector2.zero(),
         varType: "exec",
         isDragging: false,
         isSnapping: false,
     } as LinkDragData);
-    
+
     const [menuPosition, setMenuPosition] = useState<Vector2 | null>(null);
-    
+
     const viewportRef = useRef<HTMLDivElement>(null);
     const areaRef = useRef<HTMLDivElement>(null);
     const dragOrigin = useRef(Vector2.zero());
-    
+
     const func = program.functions.get(selectedFunction);
     if (func === undefined) {
         return <></>;
     }
 
     const gridSize = 32;
-    const nodeDefaultWidth = 6;
 
     function onPointerDown(event: React.PointerEvent) {
         if (dragOrigin.current === null || event.button !== 1) {
@@ -213,54 +213,34 @@ export function GraphArea() {
     let key = 0;
     for (const { src, dst } of func.links) {
         const srcNode = func.nodes.find((node) => node.id === src.nodeId);
-        const dstNode = func.nodes.find((node) => node.id === dst.nodeId);
-        if (srcNode === undefined || dstNode === undefined) {
+        if (srcNode === undefined) {
             continue;
         }
         const srcDef = findDefinition(program, selectedFunction, srcNode);
-        const dstDef = findDefinition(program, selectedFunction, dstNode);
-        if(srcDef === undefined || dstDef === undefined) {
+        if (srcDef === undefined) {
             continue;
         }
 
-        let x1 = 0, y1 = 0, y2 = 0;
         let type: PinVarType = "boolean";
 
-        switch(srcDef.type) {
+        switch (srcDef.type) {
             case "constant":
-                x1 = (srcDef.widthOverride || nodeDefaultWidth) - 0.5;
-                y1 = 0.5;
                 type = srcDef.varType;
                 break;
             case "variable":
-                x1 = nodeDefaultWidth - 0.5;
-                y1 = src.index + 0.5;
-                type = srcDef.varType;
+                const isGet = srcNode.type === "variable" && srcNode.operation === "get";
+                type = isGet || src.index === 1 ? srcDef.varType : "exec";
                 break;
             case "coreFunction":
             case "userFunction":
-                x1 = (srcDef.widthOverride || nodeDefaultWidth) - 0.5;
-                y1 = src.index + 1.5;
                 type = srcDef.outputs[src.index][1];
-                break;
-        }
-
-        switch(dstDef.type) {
-            case "variable":
-                y2 = dst.index + 0.5;
-                break;
-            case "coreFunction":
-            case "userFunction":
-                y2 = dstDef.outputs.length + dst.index + 1.5;
                 break;
         }
 
         links.push(<GraphLink
             key={key}
-            x1={srcNode.x + gridSize * x1}
-            y1={srcNode.y + gridSize * y1}
-            x2={dstNode.x + gridSize * 0.5}
-            y2={dstNode.y + gridSize * y2}
+            start={{...src, type: "output"}}
+            end={{...dst, type: "input"}}
             color={`var(--type-${type}-color)`}
         />);
         key++;
@@ -289,15 +269,11 @@ export function GraphArea() {
         );
     }
     const constantsMenu = (
-        <MenuSub icon={<IconPlus/>} label="Add Constant">
+        <MenuSub icon={<IconVariablePlus />} label="Add Constant">
             {constantMenuItems}
         </MenuSub>
     );
-    for (const def of controlFlowDefinitions.values()) {
-        addToNodeMenu(def);
-    }
-    for (const def of operationDefinitions.values()) {
-        addToNodeMenu(def);
+
 
     // Core functions
     const categorizedMenuItems = new Map<string, ReactNode[]>();
@@ -317,6 +293,13 @@ export function GraphArea() {
             () => onCreateNode((x, y) => createCoreFunctionCallNode(def.name, x, y))
         );
     }
+
+    addNodeToCategoryMenu(
+        "return",
+        "controlFlow",
+        "return",
+        () => onCreateNode((x, y) => createFunctionNode("return", x, y))
+    );
 
     const categorizedSubMenus: ReactNode[] = [];
     for (const [category, nodes] of categorizedMenuItems) {
@@ -347,7 +330,6 @@ export function GraphArea() {
                 linkIndicatorProps, setLinkIndicatorProps,
                 linkDragData,
                 gridSize,
-                nodeCellWidth: nodeDefaultWidth,
                 snapPointToGrid,
                 transformScreenPointToGraph
             }}>
@@ -357,7 +339,6 @@ export function GraphArea() {
                 style={{
                     "--grid-size": `${gridSize}px`,
                     "--grid-scale": func.scale,
-                    "--node-cell-width": nodeDefaultWidth,
                     backgroundPosition: `${bgPos.x}px ${bgPos.y}px`,
                 }}
                 onPointerDown={onPointerDown}

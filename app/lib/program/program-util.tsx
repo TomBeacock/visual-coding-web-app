@@ -1,6 +1,7 @@
 import { PinVarType } from "./program-data";
 import {
     IconAbc,
+    IconArrowBack,
     IconArrowIteration,
     IconArrowsSplit2,
     IconBinary,
@@ -72,6 +73,7 @@ export function getIcon(icon?: string) {
         case "rightShift": return <IconChevronsRight />
         case "branch": return <IconArrowsSplit2 />;
         case "loop": return <IconArrowIteration />;
+        case "return": return <IconArrowBack />
         case "variable": return <IconVariable />
         default: return <IconFunction />;
     }
