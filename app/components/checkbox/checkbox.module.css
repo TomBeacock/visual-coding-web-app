@@ -1,8 +1,13 @@
 .checkbox {
+    --checkbox-bg: light-dark(var(--neutral-100), var(--neutral-900));
+
     display: inline-block;
     position: relative;
     width: 1.125rem;
     height: 1.125rem;
+    background-color: var(--checkbox-bg);
+    border-radius: 0.25rem;
+    border: 1px solid var(--default-border);
 
     & input {
         appearance: none;
@@ -10,8 +15,6 @@
         cursor: pointer;
         width: 100%;
         height: 100%;
-        border-radius: 0.25rem;
-        border: 1px solid var(--default-border);
 
         &:checked {
             &+svg {
