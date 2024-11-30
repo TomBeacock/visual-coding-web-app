@@ -5,7 +5,7 @@ type TextInputProps = ComponentPropsWithoutRef<"input"> & {
     selectOnFocus?: boolean
 }
 
-export default function TextInput({ selectOnFocus, defaultValue, ...props }: TextInputProps) {
+export default function TextInput({ selectOnFocus, defaultValue, className, ...props }: TextInputProps) {
     const ref = useRef<HTMLInputElement>(null);
 
     const [value, setValue] = useState(defaultValue);
@@ -17,18 +17,16 @@ export default function TextInput({ selectOnFocus, defaultValue, ...props }: Tex
     }
 
     return (
-        <div>
-            <input
-                ref={ref}
-                className={classes.input}
-                type="text"
-                value={value}
-                onChange={(event) => setValue(event.target.value)}
-                onFocus={() => { if (selectOnFocus) ref.current?.select() }}
-                onDragStart={(event) => event.preventDefault()}
-                onKeyDown={onKeyDown}
-                {...props}
-            />
-        </div>
+        <input
+            ref={ref}
+            className={`${classes.input} ${className}`}
+            type="text"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            onFocus={() => { if (selectOnFocus) ref.current?.select() }}
+            onDragStart={(event) => event.preventDefault()}
+            onKeyDown={onKeyDown}
+            {...props}
+        />
     );
 }
