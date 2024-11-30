@@ -377,8 +377,8 @@ function GraphConstant({ value, connected, pin, varType }: GraphConstantProps) {
     const input = (function () {
         switch (typeof value) {
             case "boolean": return <Checkbox defaultChecked={value} />;
-            case "number": return <NumberInput defaultValue={value} selectOnFocus />;
-            case "string": return <TextInput defaultValue={value} selectOnFocus />;
+            case "number": return <NumberInput className={classes["number-input"]} defaultValue={value} hideControls selectOnFocus />;
+            case "string": return <TextInput className={classes["text-input"]} defaultValue={value} selectOnFocus />;
             default: return <></>;
         }
     })();

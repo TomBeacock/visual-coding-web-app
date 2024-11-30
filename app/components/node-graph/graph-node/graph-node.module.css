@@ -70,6 +70,16 @@
     }
 }
 
+.number-input {
+    width: 100%;
+    min-width: 10ch;
+}
+
+.text-input {
+    width: 100%;
+    min-width: 18ch;
+}
+
 .pin {
     --graph-pin-bg-hover: light-dark(var(--neutral-200), var(--neutral-700));
 
