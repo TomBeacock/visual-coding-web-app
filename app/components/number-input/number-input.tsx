@@ -4,10 +4,11 @@ import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import * as math from "mathjs";
 
 type NumberInputProps = ComponentPropsWithoutRef<"input"> & {
-    selectOnFocus?: boolean
+    hideControls?: boolean,
+    selectOnFocus?: boolean,
 }
 
-export default function NumberInput({ selectOnFocus, defaultValue, ...props }: NumberInputProps) {
+export default function NumberInput({ hideControls, selectOnFocus, defaultValue, className, ...props }: NumberInputProps) {
     const ref = useRef<HTMLInputElement>(null);
 
     const initialValue = typeof defaultValue === "number" || typeof defaultValue === "string" ? defaultValue : 0;
@@ -40,7 +41,7 @@ export default function NumberInput({ selectOnFocus, defaultValue, ...props }: N
     }
 
     return (
-        <div className={classes.root}>
+        <div className={`${classes.root} ${className}`}>
             <input
                 ref={ref}
                 className={classes.input}
@@ -53,20 +54,25 @@ export default function NumberInput({ selectOnFocus, defaultValue, ...props }: N
                 onKeyDown={onKeyDown}
                 {...props}
             />
-            <button
-                className={`${classes.button} ${classes.left}`}
-                onClick={onLeftButtonClick}
-                onPointerDown={(event) => event.preventDefault()}
-            >
-                <IconChevronLeft/>
-            </button>
-            <button
-                className={`${classes.button} ${classes.right}`}
-                onClick={onRightButtonClick}
-                onPointerDown={(event) => event.preventDefault()}
-            >
-                <IconChevronRight/>
-            </button>
+            {
+                !hideControls && 
+                <>
+                    <button
+                        className={`${classes.button} ${classes.left}`}
+                        onClick={onLeftButtonClick}
+                        onPointerDown={(event) => event.preventDefault()}
+                    >
+                        <IconChevronLeft/>
+                    </button>
+                    <button
+                        className={`${classes.button} ${classes.right}`}
+                        onClick={onRightButtonClick}
+                        onPointerDown={(event) => event.preventDefault()}
+                    >
+                        <IconChevronRight/>
+                    </button>
+                </>
+            }
         </div>
     );
 }
